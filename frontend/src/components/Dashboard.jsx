@@ -53,6 +53,8 @@ export default function Dashboard({ data, onMarkFiled }) {
     }
   };
 
+  const formattedHealthScore = Number(metrics.health_score || 0).toFixed(1);
+
   return (
     <div className="space-y-6">
       {/* Top Metrics Cards */}
@@ -63,7 +65,7 @@ export default function Dashboard({ data, onMarkFiled }) {
             <div>
               <p className="text-xs font-semibold text-slate-400">Compliance Health</p>
               <h3 className="text-2xl font-extrabold text-slate-100 mt-1">
-                {metrics.health_score}%
+                {formattedHealthScore}%
               </h3>
             </div>
             <div className="h-10 w-10 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400">
@@ -81,7 +83,7 @@ export default function Dashboard({ data, onMarkFiled }) {
             <div>
               <p className="text-xs font-semibold text-slate-400">Statutory Penalty Exposure</p>
               <h3 className="text-2xl font-extrabold text-rose-400 mt-1">
-                ₹{metrics.penalty_exposure.toLocaleString('en-IN')}
+                ₹{metrics.penalty_exposure?.toLocaleString('en-IN')}
               </h3>
             </div>
             <div className="h-10 w-10 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">

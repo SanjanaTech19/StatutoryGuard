@@ -143,8 +143,8 @@ def compute_compliance_metrics(tasks: List[Dict[str, Any]], anchor_date: date = 
             total_penalty += t.get("max_penalty", 50000.0) * 0.15
 
     # Health score formula
-    health_score = round((filed_count / total_tasks) * 100.0, 1)
+    health_score = (filed_count / total_tasks) * 100.0
     if overdue_count > 0:
         health_score = max(0.0, health_score - (overdue_count * 15.0))
 
-    return (health_score, round(total_penalty, 2), total_pending, filed_count, overdue_count)
+    return (round(health_score, 1), round(total_penalty, 2), total_pending, filed_count, overdue_count)
