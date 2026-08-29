@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, FileCheck, Upload, AlertOctagon, CheckCircle2, AlertTriangle, FileText } from 'lucide-react';
+import { ShieldCheck, FileCheck, Upload, AlertOctagon, CheckCircle2, AlertTriangle, FileText, Scale, Coins, Wallet } from 'lucide-react';
 
 const SAMPLE_BALANCE_SHEET_TEXT = `
 BALANCE SHEET OF INNOVATETECH SOLUTIONS PRIVATE LIMITED
@@ -16,7 +16,7 @@ I. EQUITY AND LIABILITIES
    (b) Short Term Provisions: Rs. 150,000
    Total Liabilities: Rs. 450,000
 
-TOTAL EQUITY & LIABILITIES: Rs. 2,150,000
+TOTAL EQUITY AND LIABILITIES: Rs. 2,150,000
 
 II. ASSETS
 1. Non-Current Assets
@@ -66,6 +66,16 @@ export default function AuditValidator({ onScan }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const formatFieldValue = (val) => {
+    if (val === null || val === undefined) {
+      return <span className="text-slate-500 font-semibold italic text-xs">Not Specified</span>;
+    }
+    if (typeof val === 'number') {
+      return <span className="text-sky-300 font-extrabold text-sm">₹{val.toLocaleString('en-IN')}</span>;
+    }
+    return <span className="text-slate-200 font-bold text-xs">{val}</span>;
   };
 
   return (
@@ -146,7 +156,7 @@ export default function AuditValidator({ onScan }) {
                 setUseSample(e.target.checked);
                 if (e.target.checked) setFile(null);
               }}
-              className="rounded bg-slate-900 border-slate-700 text-sky-500 focus:ring-0"
+              className="rounded bg-slate-900 border-slate-700 text-sky-500 focus:ring-0 cursor-pointer"
             />
             <label htmlFor="sample-check" className="text-xs font-medium text-slate-300 cursor-pointer">
               Or test with sample Balance Sheet containing intentional math discrepancy
@@ -172,7 +182,7 @@ export default function AuditValidator({ onScan }) {
 
       {/* Audit Scan Results */}
       {auditResult && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
             <FileText className="h-5 w-5 text-sky-400" />
             Audit Scan Verification Report
@@ -192,11 +202,11 @@ export default function AuditValidator({ onScan }) {
               <p className="text-xs font-semibold text-slate-400">Validation Status</p>
               <div className="mt-2">
                 {auditResult.is_valid ? (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-extrabold text-xs rounded-full">
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-extrabold text-xs rounded-full">
                     <CheckCircle2 className="h-4 w-4" /> AUDIT READY
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/30 font-extrabold text-xs rounded-full">
+                  <span className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-rose-500/10 text-rose-400 border border-rose-500/30 font-extrabold text-xs rounded-full">
                     <AlertOctagon className="h-4 w-4" /> REJECTION RISK
                   </span>
                 )}
@@ -211,13 +221,38 @@ export default function AuditValidator({ onScan }) {
             </div>
           </div>
 
-          {/* Extracted Figures JSON */}
+          {/* Premium Extracted Financial & Governance Grid */}
           {auditResult.extracted_data && (
-            <div className="glass-panel rounded-2xl p-5 space-y-2">
-              <h4 className="text-xs font-bold text-slate-300">Extracted Financial & Governance Fields</h4>
-              <pre className="bg-slate-950 p-3 rounded-xl text-xs text-sky-300 font-mono overflow-x-auto">
-                {JSON.stringify(auditResult.extracted_data, null, 2)}
-              </pre>
+            <div className="glass-panel rounded-2xl p-6 space-y-4 border border-slate-800">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-extrabold text-sky-400 uppercase tracking-wider flex items-center gap-2">
+                  <Scale className="h-4 w-4 text-sky-400" />
+                  Extracted Financial & Governance Indicators
+                </h4>
+                <span className="text-[11px] font-semibold text-slate-400 bg-slate-900 border border-slate-800 px-2.5 py-0.5 rounded-full">
+                  Schedule III Audit Parse
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {Object.entries(auditResult.extracted_data).map(([key, val]) => (
+                  <div key={key} className="bg-slate-950/80 p-4 rounded-xl border border-slate-800 space-y-1.5 transition hover:border-slate-700">
+                    <div className="flex items-center gap-2">
+                      {key.includes('Assets') ? (
+                        <Coins className="h-4 w-4 text-emerald-400 shrink-0" />
+                      ) : key.includes('Liabilities') ? (
+                        <Wallet className="h-4 w-4 text-rose-400 shrink-0" />
+                      ) : (
+                        <FileText className="h-4 w-4 text-indigo-400 shrink-0" />
+                      )}
+                      <span className="text-xs font-bold text-slate-300 truncate">{key}</span>
+                    </div>
+                    <div>
+                      {formatFieldValue(val)}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
@@ -232,7 +267,7 @@ export default function AuditValidator({ onScan }) {
               auditResult.discrepancies?.map((d, i) => (
                 <div
                   key={i}
-                  className={`p-4 rounded-xl border text-xs space-y-1 ${
+                  className={`p-4 rounded-xl border text-xs space-y-1.5 ${
                     d.severity === 'CRITICAL'
                       ? 'bg-rose-500/10 border-rose-500/30 text-rose-300'
                       : d.severity === 'HIGH'
@@ -240,11 +275,11 @@ export default function AuditValidator({ onScan }) {
                       : 'bg-sky-500/10 border-sky-500/30 text-sky-300'
                   }`}
                 >
-                  <div className="flex items-center gap-2 font-bold uppercase tracking-wider text-[10px]">
-                    <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  <div className="flex items-center gap-2 font-extrabold uppercase tracking-wider text-[10px]">
+                    <AlertTriangle className="h-4 w-4 shrink-0" />
                     <span>[{d.severity}] {d.rule}</span>
                   </div>
-                  <p className="font-medium text-slate-200">{d.description}</p>
+                  <p className="font-semibold text-slate-100">{d.description}</p>
                 </div>
               ))
             )}
