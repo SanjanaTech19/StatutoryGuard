@@ -12,7 +12,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
   useEffect(() => {
     if (currentTask) {
       setPreviewMsg(
-        `🟢 StatutoryGuard Alert: Filing for ${currentTask.form_code} (${currentTask.title}) is due on ${currentTask.due_date}. Avoid statutory penalty risk up to ₹${currentTask.max_penalty?.toLocaleString('en-IN')}. Verify compliance: https://statutoryguard.in`
+        `[STATUTORYGUARD ALERT] Filing for ${currentTask.form_code} (${currentTask.title}) is due on ${currentTask.due_date}. Avoid statutory penalty risk up to ₹${currentTask.max_penalty?.toLocaleString('en-IN')}. Verify compliance: https://statutoryguard.in`
       );
     }
   }, [selectedForm, currentTask]);
