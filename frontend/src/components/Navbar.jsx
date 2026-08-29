@@ -13,6 +13,8 @@ export default function Navbar({ user, companies, selectedCin, setSelectedCin, o
     }
   };
 
+  const displayName = user?.full_name || user?.username || 'Founder';
+
   return (
     <header className="sticky top-0 z-50 glass-panel border-b border-slate-800 px-6 py-3">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
@@ -68,11 +70,11 @@ export default function Navbar({ user, companies, selectedCin, setSelectedCin, o
               )}
             </div>
             <div className="text-xs">
-              <span className="font-bold text-slate-200 block">{user.username}</span>
+              <span className="font-bold text-slate-200 block">{displayName}</span>
               <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded ${
                 user.role === 'admin' ? 'bg-purple-500/20 text-purple-300' : 'bg-sky-500/20 text-sky-300'
               }`}>
-                {user.role}
+                {user.role} ({user.username})
               </span>
             </div>
           </div>

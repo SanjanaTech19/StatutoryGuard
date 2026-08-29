@@ -1,6 +1,6 @@
 """
 StatutoryGuard - Python FastAPI REST Backend API Server
-Includes Automatic Auto-Login on Signup for seamless user experience.
+Includes Dynamic Founder Director assignment on Sign-Up.
 """
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
@@ -126,6 +126,12 @@ def signup(req: SignupRequest):
     mca_data["incorporation_date"] = req.incorporation_date
     mca_data["email"] = req.email
 
+    # Set Director #1 to the Founder's actual full name entered during signup!
+    din_num = f"08{abs(hash(req.cin)) % 1000000:06d}"
+    mca_data["directors"] = [
+        {"din": din_num, "name": req.full_name, "designation": "Managing Director", "dsc_expiry": "2026-12-31"}
+    ]
+
     db.save_company(mca_data)
     tasks = calculate_statutory_tasks(mca_data)
     db.save_tasks(tasks)
@@ -139,7 +145,6 @@ def signup(req: SignupRequest):
         full_name=req.full_name
     )
     if not success:
-        # If user already exists, authenticate them directly or return user details
         user_data, _ = db.authenticate_user(req.username, req.password)
         if user_data:
             return {"status": "success", "message": "Logged in to existing founder account!", "user": user_data}
