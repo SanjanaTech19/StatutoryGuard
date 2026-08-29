@@ -53,14 +53,20 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
           console.error(clipErr);
         }
 
-        // Cross-Platform SMS Deep Link
-        const cleanPhone = recipient.replace(/[^0-9+]/g, '');
-        const isIOS = /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent);
-        const delimiter = isIOS ? '&' : '?';
-        const smsUri = `sms:${cleanPhone}${delimiter}body=${encodeURIComponent(previewMsg)}`;
+        // On Desktop (Windows/Mac browser), open Google Messages Web directly to prevent OS protocol prompt
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
-        window.location.href = smsUri;
-        setDispatchStatus(`SMS message copied to clipboard & messaging app launched for ${recipient}!`);
+        if (isMobile) {
+          const cleanPhone = recipient.replace(/[^0-9+]/g, '');
+          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+          const delimiter = isIOS ? '&' : '?';
+          window.location.href = `sms:${cleanPhone}${delimiter}body=${encodeURIComponent(previewMsg)}`;
+          setDispatchStatus(`SMS message copied & mobile messaging app launched for ${recipient}!`);
+        } else {
+          // Open Google Messages Web in new tab for desktop
+          window.open('https://messages.google.com/web', '_blank');
+          setDispatchStatus(`SMS message copied to clipboard! Opened Google Messages Web for ${recipient}.`);
+        }
       } else {
         setDispatchStatus(`Successfully dispatched ${ch} reminder for ${selectedForm} to ${recipient}!`);
       }
@@ -102,7 +108,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
           <div>
             <h2 className="text-xl font-bold text-slate-100">Automated Multi-Channel Alerts Hub & Real Dispatch Engine</h2>
             <p className="text-xs text-slate-400 mt-1">
-              Dispatches real notifications directly via WhatsApp Web, Gmail Web Compose / SMTP, and SMS.
+              Dispatches real notifications directly via WhatsApp Web, Gmail Web Compose / SMTP, and SMS Web.
             </p>
           </div>
         </div>
@@ -213,7 +219,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
               </div>
               {copiedSms && (
                 <div className="text-[11px] text-purple-300 font-normal pl-6">
-                  ✨ Message text automatically copied to your clipboard! If on desktop, open <a href="https://messages.google.com/web" target="_blank" rel="noopener noreferrer" className="underline font-bold text-sky-400">Google Messages Web</a> or paste directly into your messaging app.
+                  ✨ SMS message automatically copied to your clipboard! Paste directly into your messaging app.
                 </div>
               )}
             </div>
