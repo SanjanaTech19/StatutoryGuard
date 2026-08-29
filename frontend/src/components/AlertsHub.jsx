@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Calendar, MessageSquare, Mail, Smartphone, Download, CheckCircle2, Clock, Send, ShieldAlert, Sparkles, ExternalLink, Edit3 } from 'lucide-react';
+import { Bell, Calendar, MessageSquare, Mail, Smartphone, Download, CheckCircle2, Clock, Send, ShieldAlert, Sparkles, ExternalLink, Edit3, Copy } from 'lucide-react';
 
 export default function AlertsHub({ company, tasks, onDispatchTest }) {
   const [selectedForm, setSelectedForm] = useState(tasks[0]?.form_code || 'AOC-4');
@@ -7,6 +7,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
   const [customEmail, setCustomEmail] = useState(company.email || 'founder@startup.in');
   const [dispatchLogs, setDispatchLogs] = useState([]);
   const [dispatchStatus, setDispatchStatus] = useState(null);
+  const [copiedSms, setCopiedSms] = useState(false);
   const [previewMsg, setPreviewMsg] = useState('');
 
   const currentTask = tasks.find((t) => t.form_code === selectedForm) || tasks[0];
@@ -41,10 +42,25 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
         setDispatchStatus(`WhatsApp Web / App opened for ${recipient}! Message logged to audit trail.`);
       } else if (ch === 'Email' && res.mailto_url) {
         window.open(res.mailto_url, '_blank');
-        setDispatchStatus(`Gmail Web Compose opened for ${recipient}! Click Send to dispatch email instantly.`);
-      } else if (ch === 'SMS' && res.sms_url) {
-        window.location.href = res.sms_url;
-        setDispatchStatus(`SMS App opened for ${recipient}! Message logged to audit trail.`);
+        setDispatchStatus(`Gmail Web Compose opened for ${recipient}! Click Send to dispatch email.`);
+      } else if (ch === 'SMS') {
+        // Copy SMS message to clipboard automatically
+        try {
+          await navigator.clipboard.writeText(previewMsg);
+          setCopiedSms(true);
+          setTimeout(() => setCopiedSms(false), 4000);
+        } catch (clipErr) {
+          console.error(clipErr);
+        }
+
+        // Cross-Platform SMS Deep Link
+        const cleanPhone = recipient.replace(/[^0-9+]/g, '');
+        const isIOS = /iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent);
+        const delimiter = isIOS ? '&' : '?';
+        const smsUri = `sms:${cleanPhone}${delimiter}body=${encodeURIComponent(previewMsg)}`;
+        
+        window.location.href = smsUri;
+        setDispatchStatus(`SMS message copied to clipboard & messaging app launched for ${recipient}!`);
       } else {
         setDispatchStatus(`Successfully dispatched ${ch} reminder for ${selectedForm} to ${recipient}!`);
       }
@@ -190,9 +206,16 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
           </div>
 
           {dispatchStatus && (
-            <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-300 font-semibold flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
-              <span>{dispatchStatus}</span>
+            <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-300 font-semibold space-y-1">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                <span>{dispatchStatus}</span>
+              </div>
+              {copiedSms && (
+                <div className="text-[11px] text-purple-300 font-normal pl-6">
+                  ✨ Message text automatically copied to your clipboard! If on desktop, open <a href="https://messages.google.com/web" target="_blank" rel="noopener noreferrer" className="underline font-bold text-sky-400">Google Messages Web</a> or paste directly into your messaging app.
+                </div>
+              )}
             </div>
           )}
         </div>
