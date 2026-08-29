@@ -1,12 +1,12 @@
 """
 StatutoryGuard - Python FastAPI REST Backend API Server
-Includes Dynamic Founder Director assignment on Sign-Up.
+Includes Full Dual Database Integration (SQLite & Supabase PostgreSQL Sync).
 """
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, Response, JSONResponse
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import os
@@ -295,7 +295,7 @@ async def upload_vault_document(
     })
     return {"status": "success", "doc_id": doc_id, "file_hash": file_hash[:12]}
 
-# Administrator Portal Endpoints
+# Administrator Portal & Database Integration Endpoints
 @app.get("/api/admin/overview")
 def get_admin_overview():
     all_companies = db.list_companies()
@@ -334,6 +334,20 @@ def get_admin_overview():
         "users": all_users,
         "logs": all_logs
     }
+
+@app.get("/api/admin/export-db")
+def export_database():
+    """Exports full database snapshot as JSON format for backup or external database REST sync."""
+    snapshot = db.export_db_snapshot()
+    return JSONResponse(content=snapshot, headers={"Content-Disposition": "attachment; filename=statutoryguard_db_backup.json"})
+
+@app.post("/api/admin/sync-supabase")
+def sync_supabase():
+    """Triggers cloud Supabase PostgreSQL synchronization."""
+    success, msg = db.sync_to_supabase()
+    if not success:
+        return {"status": "info", "message": msg}
+    return {"status": "success", "message": msg}
 
 @app.post("/api/admin/broadcast")
 def dispatch_broadcast(req: BroadcastRequest):

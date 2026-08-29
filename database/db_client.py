@@ -8,6 +8,7 @@ import sqlite3
 import json
 import os
 import uuid
+import urllib.request
 from typing import List, Dict, Any, Optional
 from config import DB_FILE, SUPABASE_URL, SUPABASE_KEY
 from utils.auth_utils import hash_password, verify_password
@@ -386,3 +387,49 @@ class DatabaseClient:
         rows = cursor.fetchall()
         conn.close()
         return [dict(r) for r in rows]
+
+    # Database Export & Backup Operations
+    def export_db_snapshot(self) -> Dict[str, Any]:
+        """Returns complete JSON database snapshot for backup or external database REST sync."""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+
+        tables = ["users", "companies", "compliance_tasks", "document_vault", "alert_logs"]
+        snapshot = {}
+
+        for table in tables:
+            cursor.execute(f"SELECT * FROM {table}")
+            rows = cursor.fetchall()
+            snapshot[table] = [dict(r) for r in rows]
+
+        conn.close()
+        return snapshot
+
+    def sync_to_supabase(self) -> tuple[bool, str]:
+        """
+        Syncs local database records to cloud Supabase PostgreSQL via REST API if configured.
+        """
+        if not SUPABASE_URL or not SUPABASE_KEY:
+            return False, "Supabase credentials not configured in environment variables."
+
+        try:
+            snapshot = self.export_db_snapshot()
+            headers = {
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "resolution=merge-duplicates"
+            }
+
+            for table_name, rows in snapshot.items():
+                if not rows:
+                    continue
+                url = f"{SUPABASE_URL.rstrip('/')}/rest/v1/{table_name}"
+                data_bytes = json.dumps(rows).encode("utf-8")
+                req = urllib.request.Request(url, data=data_bytes, headers=headers, method="POST")
+                with urllib.request.urlopen(req) as resp:
+                    pass
+
+            return True, "Database successfully synced to cloud Supabase PostgreSQL!"
+        except Exception as e:
+            return False, f"Supabase Sync Error: {str(e)}"
