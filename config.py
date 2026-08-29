@@ -1,9 +1,20 @@
 """
 StatutoryGuard Configuration & Statutory Compliance Master Database
 Contains statutory rules, form metadata, deadline rules, and penalty calculation constants for Indian MCA/ROC compliance.
+Includes automatic .env file loader for Supabase credentials.
 """
 
 import os
+
+# Automatically load .env file into os.environ if present
+env_file_path = os.path.join(os.path.dirname(__file__), ".env")
+if os.path.exists(env_file_path):
+    with open(env_file_path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1)
+                os.environ[k.strip()] = v.strip().strip('"').strip("'")
 
 # App Information
 APP_NAME = "StatutoryGuard"
