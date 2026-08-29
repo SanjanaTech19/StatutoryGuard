@@ -271,7 +271,7 @@ class DatabaseClient:
             result.append(d)
         return result
 
-    # Compliance Tasks operations
+    # Compliance Tasks & Custom Form Operations
     def save_tasks(self, tasks: List[Dict[str, Any]]) -> bool:
         conn = self._get_connection()
         cursor = conn.cursor()
@@ -298,6 +298,31 @@ class DatabaseClient:
                 t.get("srn_number"),
                 t.get("notes", "")
             ))
+        conn.commit()
+        conn.close()
+        return True
+
+    def create_custom_task(self, task_dict: Dict[str, Any]) -> bool:
+        """Allows founder or administrator to add custom statutory compliance forms."""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+        INSERT INTO compliance_tasks (task_id, company_cin, form_code, title, due_date, status, risk_level, max_penalty, category, filed_date, srn_number, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            task_dict["task_id"],
+            task_dict["company_cin"],
+            task_dict["form_code"],
+            task_dict["title"],
+            task_dict["due_date"],
+            task_dict.get("status", "Pending"),
+            task_dict.get("risk_level", "HIGH"),
+            task_dict.get("max_penalty", 50000.0),
+            task_dict.get("category", "Custom Compliance"),
+            None,
+            None,
+            task_dict.get("notes", "Custom form added by founder/admin")
+        ))
         conn.commit()
         conn.close()
         return True

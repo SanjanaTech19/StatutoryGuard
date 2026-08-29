@@ -177,6 +177,17 @@ export default function App() {
     }
   };
 
+  const handleCreateCustomTask = async (payload) => {
+    const res = await fetch('/api/tasks/create-custom', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    fetchDashboard(selectedCin);
+    return data;
+  };
+
   const handleAuditScan = async (formData) => {
     const res = await fetch('/api/validator/scan', {
       method: 'POST',
@@ -339,7 +350,12 @@ export default function App() {
         )}
 
         {activeTab === 'dashboard' && (
-          <Dashboard data={dashboardData} onMarkFiled={handleMarkFiled} />
+          <Dashboard
+            data={dashboardData}
+            user={user}
+            onMarkFiled={handleMarkFiled}
+            onCreateCustomTask={handleCreateCustomTask}
+          />
         )}
 
         {activeTab === 'validator' && (

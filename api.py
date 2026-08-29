@@ -1,6 +1,6 @@
 """
 StatutoryGuard - Python FastAPI REST Backend API Server
-Includes Full Dual Database Integration (SQLite & Supabase PostgreSQL Sync).
+Includes Custom Form Creation & Founder Unique Features.
 """
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
@@ -69,6 +69,16 @@ class MarkFiledRequest(BaseModel):
     task_id: str
     srn_number: str
     filed_date: str
+
+class CreateCustomTaskRequest(BaseModel):
+    company_cin: str
+    form_code: str
+    title: str
+    due_date: str
+    category: str = "Custom Compliance"
+    risk_level: str = "HIGH"
+    max_penalty: float = 50000.0
+    notes: str = ""
 
 class QueryAssistantRequest(BaseModel):
     question: str
@@ -197,6 +207,23 @@ def onboard_company(req: OnboardRequest):
 def mark_task_filed(req: MarkFiledRequest):
     db.update_task_status(req.task_id, "Filed", srn=req.srn_number, filed_date=req.filed_date)
     return {"status": "success", "message": "Task marked as filed!"}
+
+@app.post("/api/tasks/create-custom")
+def create_custom_task(req: CreateCustomTaskRequest):
+    """API Endpoint allowing founders/admins to add custom compliance forms & internal deadlines."""
+    task_id = f"{req.company_cin}_{req.form_code.replace(' ', '_').replace('/', '_')}_{str(uuid.uuid4())[:6]}"
+    db.create_custom_task({
+        "task_id": task_id,
+        "company_cin": req.company_cin,
+        "form_code": req.form_code,
+        "title": req.title,
+        "due_date": req.due_date,
+        "category": req.category,
+        "risk_level": req.risk_level,
+        "max_penalty": req.max_penalty,
+        "notes": req.notes
+    })
+    return {"status": "success", "message": f"Custom form '{req.form_code}' added successfully!", "task_id": task_id}
 
 # Pre-Submission Validator Audit Engine Endpoint
 @app.post("/api/validator/scan")

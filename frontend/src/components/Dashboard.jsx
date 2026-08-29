@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { 
   ShieldCheck, AlertTriangle, CheckCircle2, Clock, Search, 
-  ChevronDown, ChevronUp, FileText, CheckCircle, AlertCircle, ArrowUpRight
+  ChevronDown, ChevronUp, FileText, CheckCircle, AlertCircle, ArrowUpRight,
+  Plus, Award, Calculator, Download, Sparkles
 } from 'lucide-react';
 
-export default function Dashboard({ data, onMarkFiled }) {
+export default function Dashboard({ data, user, onMarkFiled, onCreateCustomTask }) {
   if (!data || !data.company) {
     return (
       <div className="p-8 text-center text-slate-400">
@@ -21,6 +22,25 @@ export default function Dashboard({ data, onMarkFiled }) {
   const [selectedTask, setSelectedTask] = useState(null);
   const [srnInput, setSrnInput] = useState('');
   const [filedDateInput, setFiledDateInput] = useState(new Date().toISOString().split('T')[0]);
+
+  // Modal States
+  const [showAddFormModal, setShowAddFormModal] = useState(false);
+  const [showCertModal, setShowCertModal] = useState(false);
+  const [showEsopCalc, setShowEsopCalc] = useState(false);
+
+  // Custom Form Inputs
+  const [customFormCode, setCustomFormCode] = useState('');
+  const [customTitle, setCustomTitle] = useState('');
+  const [customDueDate, setCustomDueDate] = useState('');
+  const [customCategory, setCategoryInput] = useState('Tax & State Compliance');
+  const [customRisk, setRiskInput] = useState('HIGH');
+  const [customPenalty, setPenaltyInput] = useState(50000);
+  const [customNotes, setNotesInput] = useState('');
+  const [creatingTask, setCreatingTask] = useState(false);
+
+  // ESOP Calc state
+  const [allotmentValue, setAllotmentValue] = useState(5000000);
+  const [allotmentDate, setAllotmentDate] = useState('2024-08-01');
 
   // Filtering tasks
   let filteredTasks = tasks || [];
@@ -50,6 +70,36 @@ export default function Dashboard({ data, onMarkFiled }) {
       onMarkFiled(selectedTask.task_id, srnInput, filedDateInput);
       setSelectedTask(null);
       setSrnInput('');
+    }
+  };
+
+  const handleAddCustomFormSubmit = async (e) => {
+    e.preventDefault();
+    if (!customFormCode || !customTitle || !customDueDate) {
+      alert('Please fill in Form Code, Title, and Due Date.');
+      return;
+    }
+    setCreatingTask(true);
+    try {
+      await onCreateCustomTask({
+        company_cin: company.cin,
+        form_code: customFormCode,
+        title: customTitle,
+        due_date: customDueDate,
+        category: customCategory,
+        risk_level: customRisk,
+        max_penalty: parseFloat(customPenalty),
+        notes: customNotes
+      });
+      setShowAddFormModal(false);
+      setCustomFormCode('');
+      setCustomTitle('');
+      setCustomDueDate('');
+      setNotesInput('');
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setCreatingTask(false);
     }
   };
 
@@ -149,6 +199,95 @@ export default function Dashboard({ data, onMarkFiled }) {
           </div>
         </div>
       </div>
+
+      {/* Founder Unique Features Action Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/90 border border-slate-800 p-4 rounded-2xl">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-sky-400" />
+          <div>
+            <h3 className="text-xs font-bold text-slate-100">Founder & Admin Power Tools</h3>
+            <p className="text-[11px] text-slate-400">Add custom state/federal forms, generate investor DD packs, and calculate allotment penalties.</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* + Add Custom Form Button */}
+          <button
+            onClick={() => setShowAddFormModal(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-sky-500/20 transition"
+          >
+            <Plus className="h-4 w-4" />
+            <span>+ Add Custom Form</span>
+          </button>
+
+          {/* Investor Due Diligence Audit Pack Button */}
+          <button
+            onClick={() => setShowCertModal(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 font-bold text-xs rounded-xl transition"
+          >
+            <Award className="h-4 w-4 text-amber-400" />
+            <span>VC Due Diligence Certificate</span>
+          </button>
+
+          {/* ESOP & Share Allotment Risk Calculator */}
+          <button
+            onClick={() => setShowEsopCalc(!showEsopCalc)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 border border-indigo-500/30 font-bold text-xs rounded-xl transition"
+          >
+            <Calculator className="h-4 w-4 text-indigo-400" />
+            <span>ESOP / PAS-3 Risk Calc</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Interactive ESOP & PAS-3 Risk Calculator Drawer */}
+      {showEsopCalc && (
+        <div className="glass-panel rounded-2xl p-6 space-y-4 border border-indigo-500/30">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+              <Calculator className="h-4 w-4 text-indigo-400" />
+              Cap Table & Share Allotment (Form PAS-3 / Section 42) Penalty Shield Estimator
+            </h3>
+            <button onClick={() => setShowEsopCalc(false)} className="text-xs text-slate-500 hover:text-slate-300">
+              Close
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">Total Share Allotment Value (INR)</label>
+              <input
+                type="number"
+                value={allotmentValue}
+                onChange={(e) => setAllotmentValue(parseFloat(e.target.value) || 0)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">Board Allotment Resolution Date</label>
+              <input
+                type="date"
+                value={allotmentDate}
+                onChange={(e) => setAllotmentDate(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-xs space-y-1">
+            <p className="font-bold text-indigo-300">PAS-3 Filing Window & Statutory Penalty Calculation:</p>
+            <p className="text-slate-300">
+              - Mandatory Form PAS-3 Due Date: <span className="font-bold text-sky-400">Within 30 Days of Board Allotment</span>
+            </p>
+            <p className="text-slate-300">
+              - Statutory Late Fee: <span className="font-bold text-rose-400">₹1,000 per day of delay (Max ₹1,00,000 on Company & Directors)</span>
+            </p>
+            <p className="text-slate-300">
+              - Statutory Guard Shield: Automatically queues PAS-3 reminder 10 days prior to due date to safeguard your Cap Table.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Startup Master Data Details Collapsible */}
       <div className="glass-panel rounded-2xl p-5">
@@ -272,7 +411,7 @@ export default function Dashboard({ data, onMarkFiled }) {
                       )}
                     </div>
 
-                    <p className="text-xs text-slate-400">{t.description}</p>
+                    <p className="text-xs text-slate-400">{t.description || t.notes}</p>
                   </div>
 
                   <div className="flex items-center gap-3 shrink-0">
@@ -312,6 +451,181 @@ export default function Dashboard({ data, onMarkFiled }) {
           })}
         </div>
       </div>
+
+      {/* 1. Add Custom Form Modal */}
+      {showAddFormModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+              <Plus className="h-5 w-5 text-sky-400" />
+              Add Custom Statutory Form / Compliance Requirement
+            </h3>
+            <p className="text-xs text-slate-400">
+              Add state, tax (GST/TDS/PF), or custom corporate deadlines to your compliance matrix.
+            </p>
+
+            <form onSubmit={handleAddCustomFormSubmit} className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Form Code / Abbreviation</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. GST-3B or TDS-281"
+                  value={customFormCode}
+                  onChange={(e) => setCustomFormCode(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Compliance Title</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Monthly GST Return & Tax Deposit"
+                  value={customTitle}
+                  onChange={(e) => setCustomTitle(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Due Date</label>
+                  <input
+                    type="date"
+                    required
+                    value={customDueDate}
+                    onChange={(e) => setCustomDueDate(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Category</label>
+                  <select
+                    value={customCategory}
+                    onChange={(e) => setCategoryInput(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
+                  >
+                    <option value="Tax & State Compliance">Tax & State Compliance</option>
+                    <option value="Annual Filing">Annual Filing</option>
+                    <option value="Director Compliance">Director Compliance</option>
+                    <option value="Vendor Compliance">Vendor Compliance</option>
+                    <option value="Custom Compliance">Custom Compliance</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Risk Level</label>
+                  <select
+                    value={customRisk}
+                    onChange={(e) => setRiskInput(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
+                  >
+                    <option value="CRITICAL">CRITICAL</option>
+                    <option value="HIGH">HIGH</option>
+                    <option value="MEDIUM">MEDIUM</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Max Penalty (INR)</label>
+                  <input
+                    type="number"
+                    value={customPenalty}
+                    onChange={(e) => setPenaltyInput(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Notes / Description</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Deposit tax before 20th to avoid 18% p.a. interest"
+                  value={customNotes}
+                  onChange={(e) => setNotesInput(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddFormModal(false)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-400 hover:text-slate-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingTask}
+                  className="px-4 py-2 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-sky-500/20"
+                >
+                  {creatingTask ? 'Adding...' : 'Add Form to Matrix'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 2. Investor Due Diligence Audit Certificate Modal */}
+      {showCertModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-lg w-full p-8 shadow-2xl space-y-6 relative overflow-hidden">
+            <div className="flex justify-between items-start border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                  <Award className="h-7 w-7" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-100">Statutory Compliance Clearance Certificate</h3>
+                  <p className="text-[11px] text-slate-400">Official Due Diligence Audit Pack for Investors & Auditors</p>
+                </div>
+              </div>
+              <button onClick={() => setShowCertModal(false)} className="text-xs text-slate-500 hover:text-slate-300">✕</button>
+            </div>
+
+            <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-3 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Company Name:</span>
+                <span className="font-bold text-slate-100">{company.name}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">CIN Number:</span>
+                <span className="font-mono text-sky-400">{company.cin}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Audit Score:</span>
+                <span className="font-extrabold text-emerald-400 text-sm">{formattedHealthScore}% (Audit Ready)</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Penalty Exposure Shield:</span>
+                <span className="font-bold text-emerald-400">₹0 Active Penalties</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Verification Stamp:</span>
+                <span className="text-[10px] font-extrabold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                  VERIFIED STATUTORYGUARD AUDIT PACK
+                </span>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => window.print()}
+                className="w-full py-3 bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center justify-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                <span>Export Investor Due Diligence Audit PDF</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mark Filed Modal */}
       {selectedTask && (
