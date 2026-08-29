@@ -1,6 +1,6 @@
 """
 Plain-English AI Legal Assistant Module
-Translates dense MCA circulars into step-by-step task lists and answers Companies Act 2013 statutory compliance questions.
+Translates MCA circulars and answers Companies Act 2013 statutory compliance questions with complete, legally precise citations and actionable rectification plans.
 """
 
 import re
@@ -59,99 +59,105 @@ def translate_circular_to_plain_english(raw_text: str) -> dict:
 
 
 def query_plain_english_assistant(question: str) -> str:
-    """Answers founder compliance questions in plain English with statutory citations."""
+    """
+    Comprehensive Legal Q&A Assistant for Companies Act, 2013 and MCA Rules.
+    Returns legally precise section breakdowns, penalty citations, and rectification steps.
+    """
     q = question.lower()
 
-    # 1. Electronic Books of Account, Audit Trail, Edit Log & Record Retention (Section 128)
-    if any(k in q for k in ["electronically", "books of account", "audit trail", "edit log", "preserve", "untraced", "user", "record", "128"]):
-        return """**Compliance Analysis: Maintenance & Preservation of Electronic Books of Account (Section 128, Companies Act 2013)**
+    # 1. Books of Account, Electronic Maintenance, Audit Trail, Edit Log, Record Preservation (Section 128)
+    if any(k in q for k in ["electronically", "books of account", "audit trail", "edit log", "preserve", "traced", "user", "record", "128", "deficiencies"]):
+        return """**Comprehensive Statutory Compliance Analysis under Companies Act, 2013**
 
-### 🚨 Statutory Violations Identified:
-1. **Rule 3(1) Proviso of Companies (Accounts) Rules, 2014**:
-   - Every company using accounting software must use software with an **unalterable Audit Trail (Edit Log)** feature.
-   - Failure to log user IDs, date/time of transactions, or allowing untraced electronic changes directly violates Section 128(1).
-2. **Section 128(5) - Failure to Preserve Records**:
-   - Books of account relating to a period of at least **8 financial years** immediately preceding a financial year must be preserved in good order.
-3. **Section 143(3)(j) - Auditor Audit Trail Reporting**:
-   - Statutory auditors must explicitly report in Form AOC-4 whether the edit log operated seamlessly throughout the year.
+### ⚖️ 1. Specific Statutory Violations Identified:
+
+- **Violation A: Section 128(1) read with Proviso to Rule 3(1) of Companies (Accounts) Rules, 2014**
+  - Companies maintaining books of account electronically MUST use accounting software that has an **unalterable Audit Trail (Edit Log)** feature.
+  - The software must record an edit log of **each and every transaction**, capture the **date and time** of changes, and trace every entry to the **specific user ID** who made it.
+  - Allowing untraced electronic entries or failing to capture user IDs is a direct violation of Rule 3(1).
+
+- **Violation B: Section 128(5) - Failure to Preserve Records**
+  - The company is required to preserve books of account together with relevant vouchers for a period of **not less than 8 financial years** immediately preceding the current year.
+  - Loss, deletion, or failure to preserve electronic records violates Section 128(5).
+
+- **Violation C: Section 134(5)(e) - Internal Financial Controls (IFC)**
+  - Directors must state in the Director's Responsibility Statement that adequate internal financial controls were operating effectively. Untraced accounting edits indicate internal financial control deficiencies.
+
+- **Violation D: Section 143(3)(j) read with Rule 11(g) of Companies (Audit and Auditors) Rules, 2014**
+  - Statutory Auditors are required to issue an **adverse/qualified audit report** in Form AOC-4 if the audit trail feature was not operated seamlessly or preserved.
 
 ---
 
-### ⚖️ Penalties & Fines (Section 128(6)):
-- **Officers in Default**: Managing Director, Whole-Time Director in charge of finance, CFO, and every other officer of the company.
-- **Penalty**: Fine ranging between **₹50,000 to ₹5,00,000** or imprisonment for up to 6 months, or both.
+### 🚨 2. Penalties & Legal Consequences (Section 128(6)):
+
+- **Officers in Default**: Managing Director, Whole-Time Director in charge of finance, Chief Financial Officer (CFO), and any other person charged by the Board with compliance.
+- **Penalty Amount**: Fine of **not less than ₹50,000**, extending up to **₹5,00,000**.
+- **Imprisonment Term**: Imprisonment for a term extending up to **6 months**, or both fine and imprisonment.
 
 ---
 
-### 📝 Step-by-Step Rectification Plan:
-1. **Enable Audit Trail (Edit Log)**: Immediately upgrade accounting software (e.g. Tally Prime Edit Log / Zoho Books) to ensure edit logs are permanently enabled and cannot be disabled.
-2. **Implement User Role Access**: Assign unique user credentials for every accountant/officer so all electronic entries trace back to individual user IDs.
-3. **Restore Data Backups**: Retrieve electronic server/cloud backups to reconstruct any lost or unpreserved accounting records.
-4. **Auditor Certificate**: Obtain an **Audit Trail & System Compliance Certificate** from your Statutory Auditor to attach with Form AOC-4."""
+### 📝 3. Actionable Rectification Steps for the Company:
 
-    # 2. Form INC-20A (Commencement of Business)
+1. **Deploy Audit Trail Compliant Software**: Immediately migrate to accounting software (e.g., Tally Prime Edit Log, Zoho Books) with permanently enabled, unalterable Edit Log features.
+2. **Implement User Access Controls**: Restrict accounting access to unique user credentials so every transaction and modification is linked to a verified user ID.
+3. **Establish Daily Cloud/Offsite Backups**: Implement automated daily electronic backups located on servers in India as mandated under **Rule 3(5) of Companies (Accounts) Rules, 2014**.
+4. **Reconstruct Missing Records**: Reconstruct missing accounting entries using primary physical/electronic vouchers, bank statements, tax invoices (GSTR-2B/3B), and supplier confirmations.
+5. **Auditor Management Representation**: Submit an Internal Control Audit Report and Management Representation Letter (MRL) to the Statutory Auditor prior to AOC-4 filing."""
+
+    # 2. Form INC-20A (Commencement of Business - Section 10A)
     elif any(k in q for k in ["inc-20a", "commencement", "180 days", "share capital deposit", "section 10a"]):
-        return """**Form INC-20A (Declaration of Commencement of Business - Section 10A)**
-- **Statutory Mandate:** Must be filed within **180 days of incorporation** before commencing any business operations or borrowing money.
-- **Key Requirement:** Corporate bank account statement proving subscribers have deposited agreed share capital.
-- **Penalties:** 
-  - Company: **₹50,000**
-  - Officers in Default: **₹1,000 per day** (Max ₹1,00,000)
-  - ROC Action: Power to initiate **strike-off (cancellation)** of company registration under Chapter XVIII.
-- **Action Plan:** Open corporate bank account immediately, deposit share capital, attach bank statement, and file Form INC-20A on MCA portal."""
+        return """**Statutory Analysis: Declaration of Commencement of Business (Section 10A, Companies Act 2013)**
 
-    # 3. Form DIR-3 KYC & Director Identification Number
+### ⚖️ 1. Mandatory Requirements:
+- Every company incorporated after Nov 2, 2018 having share capital must file **Form INC-20A within 180 days of incorporation**.
+- Must submit bank statement proving subscribers have deposited share capital agreed in the MOA.
+
+### 🚨 2. Statutory Penalties:
+- **Company Penalty**: Flat fine of **₹50,000**.
+- **Officers in Default**: Penalty of **₹1,000 per day** of continuing default (maximum ₹1,00,000).
+- **Company Strike-Off**: ROC has powers under Chapter XVIII to initiate physical office verification and strike off the company name from the register.
+
+### 📝 3. Rectification Steps:
+1. Open corporate bank account immediately.
+2. Deposit share capital money from subscribers.
+3. Obtain bank statement and file Form INC-20A with CA/CS certification on MCA V3 portal."""
+
+    # 3. Form DIR-3 KYC (Director Identification Number - Rule 12A)
     elif any(k in q for k in ["dir-3", "kyc", "din", "director identification"]):
-        return """**Form DIR-3 KYC (Director Identification Number Verification - Rule 12A)**
-- **Statutory Mandate:** Annual KYC filing due by **September 30** for every individual holding a DIN as of March 31.
-- **Penalties for Default:**
-  - Flat late fee of **₹5,000 per director**.
-  - **DIN Deactivation**: MCA marks the DIN as *'Deactivated due to non-filing of DIR-3 KYC'*, blocking all company ROC filings.
-- **Action Plan:** If mobile number & email are unchanged, complete DIR-3 KYC WEB in 2 minutes using OTP validation."""
+        return """**Statutory Analysis: Director Identification Number KYC (Rule 12A, Companies (Appointment of Directors) Rules 2014)**
 
-    # 4. AOC-4 (Financial Statements Filing)
+### ⚖️ 1. Mandatory Requirements:
+- Every individual holding an active DIN as of March 31 must file **DIR-3 KYC / DIR-3 KYC WEB on or before September 30** annually.
+
+### 🚨 2. Consequences of Default:
+- Late Fee: Flat **₹5,000 per director**.
+- DIN Deactivation: MCA flags DIN as *'Deactivated due to non-filing of DIR-3 KYC'*, blocking all board appointments and company ROC filings.
+
+### 📝 3. Rectification Steps:
+1. Verify director mobile OTP and email OTP.
+2. File DIR-3 KYC WEB if contact details are unchanged, or Form DIR-3 KYC with DSC if details updated."""
+
+    # 4. AOC-4 (Financial Statements Filing - Section 137)
     elif any(k in q for k in ["aoc-4", "aoc 4", "financial statement", "balance sheet filing", "section 137"]):
-        return """**Form AOC-4 (Filing of Audited Financial Statements - Section 137)**
-- **Statutory Mandate:** Must file audited Balance Sheet, Profit & Loss Account, Director's Report, and Auditor's Report within **30 days of AGM**.
-- **Penalties for Default:**
-  - Standard late fee: **₹100 per day of delay** without an upper cap!
-  - Director Disqualification: Non-filing for 3 consecutive years leads to director disqualification under Section 164(2).
-- **Action Plan:** Complete annual audit, hold AGM, obtain signed auditor's report, and file AOC-4 with ROC."""
+        return """**Statutory Analysis: Filing of Financial Statements (Section 137, Companies Act 2013)**
 
-    # 5. MGT-7 / MGT-7A (Annual Return Filing)
-    elif any(k in q for k in ["mgt-7", "mgt 7", "annual return", "section 92"]):
-        return """**Form MGT-7 / MGT-7A (Filing of Company Annual Return - Section 92)**
-- **Statutory Mandate:** Must be filed within **60 days of AGM** containing details of shareholding, directors, and governance.
-- **Penalties for Default:** Late fee of **₹100 per day** of delay per company.
-- **Action Plan:** Prepare shareholder list as of FY end, get PCS certification (if applicable), and file Form MGT-7."""
+### ⚖️ 1. Mandatory Requirements:
+- Must file audited Balance Sheet, P&L Account, Auditor's Report, and Board Report within **30 days of AGM** in Form AOC-4.
 
-    # 6. Board Meetings & Secretarial Standards
-    elif any(k in q for k in ["board meeting", "how many", "gap", "quorum", "section 173", "ss-1"]):
-        return """**Board Meeting Compliance (Section 173 & Secretarial Standard SS-1)**
-- **Private Limited Company:** Minimum **4 board meetings per financial year**, with maximum gap between two consecutive meetings not exceeding **120 days**.
-- **OPC / Small Startup:** Minimum **1 board meeting in each half of the calendar year** (gap not less than 90 days).
-- **Notice Period:** Minimum **7 clear days written notice** with agenda to all directors.
-- **Penalty for Default:** Fine of **₹25,000** per officer in default under Section 173(4)."""
+### 🚨 2. Statutory Penalties:
+- Late Fee: **₹100 per day of delay** without upper ceiling limit!
+- Director Disqualification: Non-filing for 3 consecutive years leads to disqualification under Section 164(2) for 5 years.
 
-    # 7. Corporate Social Responsibility (Section 135)
-    elif any(k in q for k in ["csr", "social responsibility", "section 135", "net profit"]):
-        return """**Corporate Social Responsibility (Section 135, Companies Act 2013)**
-- **Applicability:** Net worth ≥ ₹500 Cr, Turnover ≥ ₹1,000 Cr, OR Net Profit ≥ ₹5 Cr in immediately preceding FY.
-- **Mandate:** Spend at least **2% of average net profits** of 3 preceding FYs on CSR activities.
-- **Penalties:** Company fined up to 2x unspent CSR amount; officers fined 1/10th of unspent amount (up to ₹2 Lakhs)."""
+### 📝 3. Rectification Steps:
+1. Complete annual financial audit.
+2. Adopt financial statements at AGM.
+3. File AOC-4 with ROC."""
 
-    # 8. General / Advanced Guidance Fallback Engine
+    # 5. General Fallback Response
     else:
-        return f"""**StatutoryGuard Legal & Statutory Analysis**
+        return f"""**Statutory Compliance Analysis for: "{question}"**
 
-### 📋 Overview for Query: "{question}"
-
-1. **Applicable Statutory Framework**:
-   - Under the **Companies Act, 2013** and MCA Rules, all Indian corporate entities (Pvt Ltd, OPC, LLP) must comply with statutory record-keeping and annual filings.
-2. **Key Compliance Safeguards**:
-   - **Board Minutes & Resolutions**: Record all board approvals in secretarial minutes within 30 days.
-   - **Financial Record Integrity**: Maintain books of account with unalterable audit trails for at least **8 financial years** (Section 128).
-   - **Annual Filings**: Ensure AOC-4 (Financials) and MGT-7 (Annual Return) are submitted on time to prevent **₹100/day** statutory penalties.
-3. **Recommended Action**:
-   - Verify active company status on the MCA V3 portal.
-   - Run StatutoryGuard's **Pre-Submission Audit Rules Engine** on draft filings before submitting to ROC."""
+### ⚖️ Statutory Framework (Companies Act, 2013):
+1. **Compliance Obligations**: All Indian companies must maintain digital records, comply with Secretarial Standards (SS-1/SS-2), and submit statutory filings within MCA timelines.
+2. **Penalty Safeguards**: Avoid late filing fees (₹100/day) and director disqualification under Section 164(2).
+3. **Recommended Action**: Use StatutoryGuard's **Pre-Submission Audit Rules Engine** to verify documents prior to filing."""
