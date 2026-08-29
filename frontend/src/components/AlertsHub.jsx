@@ -35,13 +35,13 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
         message: previewMsg
       });
 
-      // Handle Real Direct Opening of WhatsApp / Email / SMS Apps
+      // Handle Real Direct Opening of WhatsApp / Gmail / SMS Apps
       if (ch === 'WhatsApp' && res.whatsapp_url) {
         window.open(res.whatsapp_url, '_blank');
         setDispatchStatus(`WhatsApp Web / App opened for ${recipient}! Message logged to audit trail.`);
       } else if (ch === 'Email' && res.mailto_url) {
-        window.location.href = res.mailto_url;
-        setDispatchStatus(`Email client opened for ${recipient}! ${res.smtp_sent ? 'Background SMTP Email Sent!' : 'Message logged to audit trail.'}`);
+        window.open(res.mailto_url, '_blank');
+        setDispatchStatus(`Gmail Web Compose opened for ${recipient}! Click Send to dispatch email instantly.`);
       } else if (ch === 'SMS' && res.sms_url) {
         window.location.href = res.sms_url;
         setDispatchStatus(`SMS App opened for ${recipient}! Message logged to audit trail.`);
@@ -86,7 +86,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
           <div>
             <h2 className="text-xl font-bold text-slate-100">Automated Multi-Channel Alerts Hub & Real Dispatch Engine</h2>
             <p className="text-xs text-slate-400 mt-1">
-              Dispatches real notifications to any WhatsApp number, Email address, or SMS mobile contact.
+              Dispatches real notifications directly via WhatsApp Web, Gmail Web Compose / SMTP, and SMS.
             </p>
           </div>
         </div>
@@ -143,7 +143,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
               </label>
               <input
                 type="email"
-                placeholder="founder@startup.in"
+                placeholder="sanjana.rajasekar06@gmail.com"
                 value={customEmail}
                 onChange={(e) => setCustomEmail(e.target.value)}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-sky-500 font-mono"
@@ -177,7 +177,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
               className="p-3.5 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-xl text-xs font-bold transition flex flex-col items-center gap-1.5 shadow-lg shadow-sky-500/5"
             >
               <Mail className="h-5 w-5 text-sky-400" />
-              <span>Send Email</span>
+              <span>Send Gmail</span>
             </button>
 
             <button
@@ -269,7 +269,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
 
         {dispatchLogs.length === 0 ? (
           <div className="text-center text-slate-500 py-8 text-xs border border-dashed border-slate-800 rounded-xl">
-            No alert dispatches triggered in current session yet. Select a statutory form above and click Launch WhatsApp, Send Email, or Open SMS to test!
+            No alert dispatches triggered in current session yet. Select a statutory form above and click Launch WhatsApp, Send Gmail, or Open SMS to test!
           </div>
         ) : (
           <div className="space-y-2">

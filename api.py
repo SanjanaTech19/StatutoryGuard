@@ -1,6 +1,6 @@
 """
 StatutoryGuard - Python FastAPI REST Backend API Server
-Includes Custom Form Creation, Real Multi-Channel WhatsApp/Email/SMS Dispatch, & Founder Unique Features.
+Includes Custom Form Creation, Real Multi-Channel WhatsApp/Gmail/SMS Dispatch, & Founder Unique Features.
 """
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
@@ -289,7 +289,7 @@ def dispatch_test_alert(req: DispatchAlertRequest):
         whatsapp_url = f"https://api.whatsapp.com/send?phone={clean_phone}&text={encoded_msg}"
     elif req.channel == "Email":
         subject = urllib.parse.quote(f"StatutoryGuard Alert: {req.form_code} Compliance Reminder")
-        mailto_url = f"mailto:{req.recipient}?subject={subject}&body={encoded_msg}"
+        mailto_url = f"https://mail.google.com/mail/?view=cm&fs=1&to={req.recipient}&su={subject}&body={encoded_msg}"
     elif req.channel == "SMS":
         sms_url = f"sms:{clean_phone}?body={encoded_msg}"
 
