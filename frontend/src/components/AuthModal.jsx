@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, User, Building2, Lock, ArrowRight, AlertTriangle } from 'lucide-react';
+import { Shield, User, Building2, Lock, ArrowRight, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
 export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
   const [tab, setTab] = useState('login');
@@ -8,6 +8,7 @@ export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
   const [loginInput, setLoginInput] = useState('');
   const [loginPass, setLoginPass] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [loginSuccess, setLoginSuccess] = useState('');
 
   // Admin Login State
   const [adminUser, setAdminUser] = useState('admin');
@@ -23,8 +24,9 @@ export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
   const [fullName, setFullName] = useState('Rajesh Kumar');
   const [username, setUsername] = useState('rajesh_founder');
   const [email, setEmail] = useState('rajesh@innovatetech.in');
-  const [pass1, setPass1] = useState('');
-  const [signupMsg, setSignupMsg] = useState('');
+  const [pass1, setPass1] = useState('FounderPass123!');
+  const [signupError, setSignupError] = useState('');
+  const [isSigningUp, setIsSigningUp] = useState(false);
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -32,7 +34,7 @@ export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
     try {
       await onLogin(loginInput, loginPass);
     } catch (err) {
-      setLoginError(err.message || 'Login failed');
+      setLoginError(err.message || 'Login failed. Please check your credentials.');
     }
   };
 
@@ -48,8 +50,17 @@ export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
 
   const handleSignupSubmit = async (e) => {
     e.preventDefault();
-    setSignupMsg('');
+    setSignupError('');
+    setLoginSuccess('');
+    setIsSigningUp(true);
+
     try {
+      if (!cin || !compName || !username || !email || !pass1) {
+        setSignupError('Please fill in all required fields.');
+        setIsSigningUp(false);
+        return;
+      }
+
       await onSignup({
         cin,
         company_name: compName,
@@ -60,10 +71,14 @@ export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
         email,
         password: pass1
       });
-      setSignupMsg('Account created successfully! Please sign in.');
+
+      setLoginSuccess(`Account created for ${compName}! Please sign in now.`);
+      setLoginInput(username);
       setTab('login');
     } catch (err) {
-      setSignupMsg(err.message || 'Sign up failed');
+      setSignupError(err.message || 'Sign up failed. Username or CIN may already be registered.');
+    } finally {
+      setIsSigningUp(false);
     }
   };
 
@@ -90,6 +105,7 @@ export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
         {/* Tab Selector */}
         <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
           <button
+            type="button"
             onClick={() => setTab('login')}
             className={`flex-1 py-2 rounded-lg transition ${
               tab === 'login' ? 'bg-sky-500 text-white shadow font-bold' : 'text-slate-400 hover:text-slate-200'
@@ -98,6 +114,7 @@ export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
             Founder Login
           </button>
           <button
+            type="button"
             onClick={() => setTab('signup')}
             className={`flex-1 py-2 rounded-lg transition ${
               tab === 'signup' ? 'bg-sky-500 text-white shadow font-bold' : 'text-slate-400 hover:text-slate-200'
@@ -106,6 +123,7 @@ export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
             Sign-Up
           </button>
           <button
+            type="button"
             onClick={() => setTab('admin')}
             className={`flex-1 py-2 rounded-lg transition ${
               tab === 'admin' ? 'bg-purple-600 text-white shadow font-bold' : 'text-slate-400 hover:text-slate-200'
@@ -118,14 +136,16 @@ export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
         {/* 1. Founder Login */}
         {tab === 'login' && (
           <form onSubmit={handleLoginSubmit} className="space-y-4">
-            {signupMsg && (
-              <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-xl text-xs">
-                {signupMsg}
+            {loginSuccess && (
+              <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-xl text-xs flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                <span>{loginSuccess}</span>
               </div>
             )}
             {loginError && (
-              <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl text-xs font-semibold">
-                {loginError}
+              <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl text-xs font-semibold flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span>{loginError}</span>
               </div>
             )}
 
@@ -166,6 +186,13 @@ export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
         {/* 2. Sign Up */}
         {tab === 'signup' && (
           <form onSubmit={handleSignupSubmit} className="space-y-3">
+            {signupError && (
+              <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl text-xs font-semibold flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span>{signupError}</span>
+              </div>
+            )}
+
             <div>
               <label className="block text-[11px] font-semibold text-slate-300 mb-1">Company CIN</label>
               <input
@@ -199,6 +226,29 @@ export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
                   <option value="One Person Company">One Person Company</option>
                   <option value="LLP">LLP</option>
                 </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">Incorporation Date</label>
+                <input
+                  type="date"
+                  required
+                  value={incDate}
+                  onChange={(e) => setIncDate(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-300 mb-1">Founder Full Name</label>
+                <input
+                  type="text"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
+                />
               </div>
             </div>
 
@@ -239,9 +289,10 @@ export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
 
             <button
               type="submit"
-              className="w-full py-3 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-sky-500/20 transition"
+              disabled={isSigningUp}
+              className="w-full py-3 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-sky-500/20 transition flex items-center justify-center gap-2"
             >
-              Register Startup & Create Founder Account
+              <span>{isSigningUp ? 'Registering Startup...' : 'Register Startup & Create Founder Account'}</span>
             </button>
           </form>
         )}
@@ -255,8 +306,9 @@ export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
             </div>
 
             {adminError && (
-              <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl text-xs font-semibold">
-                {adminError}
+              <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl text-xs font-semibold flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span>{adminError}</span>
               </div>
             )}
 
