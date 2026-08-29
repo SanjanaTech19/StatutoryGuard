@@ -1,8 +1,91 @@
 import React, { useState } from 'react';
-import { Bot, FileText, Send, Sparkles, AlertCircle, Clock, CheckCircle } from 'lucide-react';
+import { Bot, FileText, Send, Sparkles, AlertCircle, Clock, CheckCircle, ShieldAlert, Scale, AlertTriangle, CheckCircle2 } from 'lucide-react';
+
+function FormattedLegalResponse({ text }) {
+  if (!text) return null;
+
+  // Split into lines for structured rendering
+  const lines = text.split('\n');
+  const elements = [];
+  let currentSection = null;
+
+  lines.forEach((line, idx) => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+
+    // Headings (e.g. ### or **Header**)
+    if (trimmed.startsWith('###') || (trimmed.startsWith('**') && trimmed.endsWith('**') && trimmed.length < 80)) {
+      const cleanHeading = trimmed.replace(/^[#*\s]+|[*\s]+$/g, '');
+      elements.push(
+        <div key={idx} className="flex items-center gap-2 font-extrabold text-sm text-sky-400 border-b border-slate-800 pb-1.5 mt-3 mb-2">
+          <Scale className="h-4 w-4 text-sky-400 shrink-0" />
+          <span>{cleanHeading}</span>
+        </div>
+      );
+      return;
+    }
+
+    // Violation Card (e.g. - **Violation A: ...)
+    if (trimmed.includes('Violation') || trimmed.includes('Rule 3') || trimmed.includes('Section 128(5)')) {
+      const cleanText = trimmed.replace(/^[*\-\s]+/, '').replace(/\*\*/g, '');
+      elements.push(
+        <div key={idx} className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-200 text-xs my-2 space-y-1">
+          <div className="flex items-center gap-2 font-extrabold text-rose-300 text-[11px] uppercase tracking-wider">
+            <AlertCircle className="h-4 w-4 text-rose-400 shrink-0" />
+            <span>STATUTORY VIOLATION IDENTIFIED</span>
+          </div>
+          <p className="font-semibold text-slate-100 leading-relaxed">{cleanText}</p>
+        </div>
+      );
+      return;
+    }
+
+    // Penalties Section Banner
+    if (trimmed.includes('Penalties') || trimmed.includes('Fine') || trimmed.includes('Imprisonment')) {
+      const cleanText = trimmed.replace(/^[*\-\s]+/, '').replace(/\*\*/g, '');
+      elements.push(
+        <div key={idx} className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs my-2 space-y-1">
+          <div className="flex items-center gap-2 font-extrabold text-amber-300 text-[11px] uppercase tracking-wider">
+            <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
+            <span>PENALTY & LEGAL EXPOSURE</span>
+          </div>
+          <p className="font-semibold text-slate-100 leading-relaxed">{cleanText}</p>
+        </div>
+      );
+      return;
+    }
+
+    // Action Step (e.g. 1. Deploy... or - Action Plan...)
+    if (/^\d+\./.test(trimmed) || trimmed.includes('Rectification') || trimmed.includes('Action Plan')) {
+      const cleanText = trimmed.replace(/\*\*/g, '');
+      elements.push(
+        <div key={idx} className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 text-xs my-1.5 flex items-start gap-2.5">
+          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+          <span className="font-semibold text-slate-100 leading-relaxed">{cleanText}</span>
+        </div>
+      );
+      return;
+    }
+
+    // Standard Text Line with inline **bold** parsing
+    const parts = trimmed.split(/(\*\*.*?\*\*)/g);
+    elements.push(
+      <p key={idx} className="text-xs text-slate-200 leading-relaxed my-1">
+        {parts.map((part, pIdx) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            return <strong key={pIdx} className="font-extrabold text-slate-100">{part.slice(2, -2)}</strong>;
+          }
+          return part;
+        })}
+      </p>
+    );
+  });
+
+  return <div className="space-y-1">{elements}</div>;
+}
 
 export default function LegalAssistant({ presets, onTranslate, onQuery }) {
-  const [activeTab, setActiveTab] = useState('decoder');
+  const [activeTab, setActiveTab] = useState('chat');
   const [selectedPreset, setSelectedPreset] = useState('');
   const [customText, setCustomText] = useState('');
   const [translationResult, setTranslationResult] = useState(null);
@@ -76,16 +159,6 @@ export default function LegalAssistant({ presets, onTranslate, onQuery }) {
       {/* Tabs */}
       <div className="flex border-b border-slate-800 gap-4">
         <button
-          onClick={() => setActiveTab('decoder')}
-          className={`pb-3 text-xs font-bold transition border-b-2 ${
-            activeTab === 'decoder'
-              ? 'border-sky-500 text-sky-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          📄 Legal Circular & Notice Decoder
-        </button>
-        <button
           onClick={() => setActiveTab('chat')}
           className={`pb-3 text-xs font-bold transition border-b-2 ${
             activeTab === 'chat'
@@ -95,9 +168,77 @@ export default function LegalAssistant({ presets, onTranslate, onQuery }) {
         >
           💬 Compliance Q&A Assistant
         </button>
+        <button
+          onClick={() => setActiveTab('decoder')}
+          className={`pb-3 text-xs font-bold transition border-b-2 ${
+            activeTab === 'decoder'
+              ? 'border-sky-500 text-sky-400'
+              : 'border-transparent text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          📄 Legal Circular & Notice Decoder
+        </button>
       </div>
 
-      {/* Tab 1: Decoder */}
+      {/* Tab 1: Q&A Chat */}
+      {activeTab === 'chat' && (
+        <div className="space-y-4">
+          <div className="glass-panel rounded-2xl p-6 min-h-[400px] flex flex-col justify-between space-y-4">
+            <div className="space-y-4 overflow-y-auto max-h-[500px] pr-2">
+              {chatHistory.length === 0 ? (
+                <div className="text-center text-slate-500 py-16 text-xs">
+                  <Bot className="h-10 w-10 mx-auto mb-2 text-sky-400" />
+                  <p className="font-bold text-slate-300 text-sm">Ask StatutoryGuard AI Any Compliance Question</p>
+                  <p className="mt-1 text-slate-500">Ask about Companies Act 2013, Section 128 Audit Trail, INC-20A rules, DIR-3 KYC, or AOC-4 deadlines.</p>
+                </div>
+              ) : (
+                chatHistory.map((m, idx) => (
+                  <div
+                    key={idx}
+                    className={`p-5 rounded-2xl text-xs ${
+                      m.role === 'user'
+                        ? 'bg-sky-500/10 border border-sky-500/30 text-slate-100 ml-8 font-semibold'
+                        : 'bg-slate-900 border border-slate-800 text-slate-200 mr-4 space-y-2'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between border-b border-slate-800/80 pb-2 mb-2">
+                      <span className="text-[11px] font-bold text-sky-400 flex items-center gap-1.5">
+                        {m.role === 'user' ? '👤 You' : '🛡️ StatutoryGuard AI Response'}
+                      </span>
+                    </div>
+
+                    {m.role === 'user' ? (
+                      <p className="text-xs text-slate-100 leading-relaxed font-medium">{m.content}</p>
+                    ) : (
+                      <FormattedLegalResponse text={m.content} />
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            <form onSubmit={handleQuerySubmit} className="flex gap-2 pt-3 border-t border-slate-800">
+              <input
+                type="text"
+                placeholder="Ask compliance question (e.g. 'What are the rules for electronic books of account under Section 128?')"
+                value={questionInput}
+                onChange={(e) => setQuestionInput(e.target.value)}
+                className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
+              />
+              <button
+                type="submit"
+                disabled={loadingQuery}
+                className="px-6 py-3 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-sky-500/20 transition flex items-center gap-1.5 shrink-0"
+              >
+                <Send className="h-4 w-4" />
+                <span>{loadingQuery ? 'Analyzing...' : 'Send'}</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Tab 2: Decoder */}
       {activeTab === 'decoder' && (
         <div className="space-y-6">
           <div className="glass-panel rounded-2xl p-6 space-y-4">
@@ -185,56 +326,6 @@ export default function LegalAssistant({ presets, onTranslate, onQuery }) {
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* Tab 2: Q&A Chat */}
-      {activeTab === 'chat' && (
-        <div className="space-y-4">
-          <div className="glass-panel rounded-2xl p-6 min-h-[350px] flex flex-col justify-between space-y-4">
-            <div className="space-y-3 overflow-y-auto max-h-[400px] pr-2">
-              {chatHistory.length === 0 ? (
-                <div className="text-center text-slate-500 py-12 text-xs">
-                  <Bot className="h-8 w-8 mx-auto mb-2 text-slate-600" />
-                  Ask any question about Companies Act 2013, INC-20A rules, DIR-3 KYC deadlines, or board meeting counts.
-                </div>
-              ) : (
-                chatHistory.map((m, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-4 rounded-2xl text-xs ${
-                      m.role === 'user'
-                        ? 'bg-sky-500/10 border border-sky-500/30 text-slate-100 ml-12'
-                        : 'bg-slate-900 border border-slate-800 text-slate-200 mr-12'
-                    }`}
-                  >
-                    <span className="text-[10px] font-bold block mb-1 text-slate-400">
-                      {m.role === 'user' ? 'You' : 'StatutoryGuard AI'}
-                    </span>
-                    <div className="whitespace-pre-line font-medium">{m.content}</div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <form onSubmit={handleQuerySubmit} className="flex gap-2 pt-2 border-t border-slate-800">
-              <input
-                type="text"
-                placeholder="Ask compliance question (e.g. 'What is the penalty for missing INC-20A?')"
-                value={questionInput}
-                onChange={(e) => setQuestionInput(e.target.value)}
-                className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
-              />
-              <button
-                type="submit"
-                disabled={loadingQuery}
-                className="px-5 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-sky-500/20 transition flex items-center gap-1.5 shrink-0"
-              >
-                <Send className="h-4 w-4" />
-                <span>Send</span>
-              </button>
-            </form>
-          </div>
         </div>
       )}
     </div>
