@@ -136,6 +136,11 @@ export default function App() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || 'Signup failed');
+    if (data.user) {
+      setUser(data.user);
+      if (data.user.company_cin) setSelectedCin(data.user.company_cin);
+    }
+    return data;
   };
 
   const handleLogout = () => {

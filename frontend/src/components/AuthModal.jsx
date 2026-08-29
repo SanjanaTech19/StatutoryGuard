@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Shield, User, Building2, Lock, ArrowRight, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Shield, User, Building2, Lock, ArrowRight, AlertTriangle, CheckCircle2, Sparkles } from 'lucide-react';
 
 export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
   const [tab, setTab] = useState('login');
   
   // Login State
-  const [loginInput, setLoginInput] = useState('');
-  const [loginPass, setLoginPass] = useState('');
+  const [loginInput, setLoginInput] = useState('rajesh_founder');
+  const [loginPass, setLoginPass] = useState('FounderPass123!');
   const [loginError, setLoginError] = useState('');
   const [loginSuccess, setLoginSuccess] = useState('');
 
@@ -22,8 +22,8 @@ export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
   const [entityType, setEntityType] = useState('Private Limited');
   const [incDate, setIncDate] = useState('2023-05-10');
   const [fullName, setFullName] = useState('Rajesh Kumar');
-  const [username, setUsername] = useState('rajesh_founder');
-  const [email, setEmail] = useState('rajesh@innovatetech.in');
+  const [username, setUsername] = useState('new_founder_' + Math.floor(Math.random() * 1000));
+  const [email, setEmail] = useState(`founder_${Math.floor(Math.random() * 1000)}@innovatetech.in`);
   const [pass1, setPass1] = useState('FounderPass123!');
   const [signupError, setSignupError] = useState('');
   const [isSigningUp, setIsSigningUp] = useState(false);
@@ -71,10 +71,6 @@ export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
         email,
         password: pass1
       });
-
-      setLoginSuccess(`Account created for ${compName}! Please sign in now.`);
-      setLoginInput(username);
-      setTab('login');
     } catch (err) {
       setSignupError(err.message || 'Sign up failed. Username or CIN may already be registered.');
     } finally {
@@ -292,7 +288,8 @@ export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
               disabled={isSigningUp}
               className="w-full py-3 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-sky-500/20 transition flex items-center justify-center gap-2"
             >
-              <span>{isSigningUp ? 'Registering Startup...' : 'Register Startup & Create Founder Account'}</span>
+              <Sparkles className="h-4 w-4" />
+              <span>{isSigningUp ? 'Registering Startup...' : 'Register Startup & Auto Sign-In'}</span>
             </button>
           </form>
         )}

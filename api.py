@@ -1,6 +1,6 @@
 """
 StatutoryGuard - Python FastAPI REST Backend API Server
-Preserves 100% of Python AI, LangChain, Document Parsing, Security, and Compliance Calculator backend logic.
+Includes Automatic Auto-Login on Signup for seamless user experience.
 """
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
@@ -139,8 +139,15 @@ def signup(req: SignupRequest):
         full_name=req.full_name
     )
     if not success:
-        raise HTTPException(status_code=400, detail=msg)
-    return {"status": "success", "message": "Company registered and user created successfully!"}
+        # If user already exists, authenticate them directly or return user details
+        user_data, _ = db.authenticate_user(req.username, req.password)
+        if user_data:
+            return {"status": "success", "message": "Logged in to existing founder account!", "user": user_data}
+        else:
+            raise HTTPException(status_code=400, detail=msg)
+
+    user_data, _ = db.authenticate_user(req.username, req.password)
+    return {"status": "success", "message": "Company registered and user created successfully!", "user": user_data}
 
 # Company & Dashboard Endpoints
 @app.get("/api/companies")
