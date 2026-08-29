@@ -71,9 +71,24 @@ CREATE TABLE IF NOT EXISTS public.alert_logs (
     message TEXT NOT NULL
 );
 
--- Enable Public Table Access for REST API Synchronization
-ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.companies DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.compliance_tasks DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.document_vault DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.alert_logs DISABLE ROW LEVEL SECURITY;
+-- Enable RLS and add public permissive policies for seamless REST API sync
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.companies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.compliance_tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.document_vault ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.alert_logs ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public Users Access" ON public.users;
+CREATE POLICY "Public Users Access" ON public.users FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public Companies Access" ON public.companies;
+CREATE POLICY "Public Companies Access" ON public.companies FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public Tasks Access" ON public.compliance_tasks;
+CREATE POLICY "Public Tasks Access" ON public.compliance_tasks FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public Vault Access" ON public.document_vault;
+CREATE POLICY "Public Vault Access" ON public.document_vault FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public Logs Access" ON public.alert_logs;
+CREATE POLICY "Public Logs Access" ON public.alert_logs FOR ALL USING (true) WITH CHECK (true);
