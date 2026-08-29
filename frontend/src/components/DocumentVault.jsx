@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, Key, Upload, FileText, CheckCircle2, Shield } from 'lucide-react';
+import { Lock, Key, Upload, FileText, CheckCircle2, Shield, Building2 } from 'lucide-react';
 
 export default function DocumentVault({ cin, data, onUpload }) {
   const { documents, directors } = data || { documents: [], directors: [] };
@@ -37,7 +37,9 @@ export default function DocumentVault({ cin, data, onUpload }) {
 
   let filteredDocs = documents || [];
   if (catFilter !== 'All') {
-    filteredDocs = filteredDocs.filter((d) => d.category === catFilter);
+    filteredDocs = filteredDocs.filter((d) => 
+      d.category === catFilter || (catFilter.includes('Incorporation') && d.category.includes('Incorporation'))
+    );
   }
 
   return (
@@ -145,7 +147,7 @@ export default function DocumentVault({ cin, data, onUpload }) {
           <div className="flex justify-between items-center">
             <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
               <FileText className="h-4 w-4 text-indigo-400" />
-              Encrypted Repository Documents
+              Encrypted Repository Documents ({filteredDocs.length})
             </h3>
 
             <select
@@ -163,23 +165,26 @@ export default function DocumentVault({ cin, data, onUpload }) {
 
           <div className="space-y-3">
             {filteredDocs.length === 0 ? (
-              <div className="text-center text-slate-500 py-8 text-xs">
-                No documents found in vault.
+              <div className="text-center text-slate-500 py-12 text-xs border border-dashed border-slate-800 rounded-xl">
+                No documents uploaded in vault for company `{cin}`.
               </div>
             ) : (
               filteredDocs.map((doc) => (
                 <div key={doc.doc_id} className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                    <div className="h-10 w-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
                       <FileText className="h-5 w-5" />
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-slate-200">{doc.doc_name}</h4>
-                      <p className="text-[10px] text-slate-400">Category: {doc.category} &bull; Date: {doc.upload_date}</p>
+                      <p className="text-[10px] text-slate-400">Category: {doc.category} &bull; Uploaded: {doc.upload_date}</p>
+                      <p className="text-[10px] text-sky-400 font-mono flex items-center gap-1 mt-0.5">
+                        <Building2 className="h-3 w-3 inline shrink-0" /> CIN: {doc.company_cin}
+                      </p>
                     </div>
                   </div>
 
-                  <span className="text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-full flex items-center gap-1">
+                  <span className="text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-full flex items-center gap-1 shrink-0">
                     <CheckCircle2 className="h-3 w-3" /> AES-256 ENCRYPTED
                   </span>
                 </div>

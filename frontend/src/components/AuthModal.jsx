@@ -16,14 +16,15 @@ export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
   const [adminPin, setAdminPin] = useState('998877');
   const [adminError, setAdminError] = useState('');
 
-  // Signup State
-  const [cin, setCin] = useState('U72900KA2023PTC174821');
-  const [compName, setCompName] = useState('InnovateTech Solutions Private Limited');
+  // Generate unique initial values for new startup signup
+  const randomNum = Math.floor(100000 + Math.random() * 900000);
+  const [cin, setCin] = useState(`U72900MH2024PTC${randomNum}`);
+  const [compName, setCompName] = useState(`AuraTech_${randomNum} Private Limited`);
   const [entityType, setEntityType] = useState('Private Limited');
-  const [incDate, setIncDate] = useState('2023-05-10');
-  const [fullName, setFullName] = useState('Rajesh Kumar');
-  const [username, setUsername] = useState('new_founder_' + Math.floor(Math.random() * 1000));
-  const [email, setEmail] = useState(`founder_${Math.floor(Math.random() * 1000)}@innovatetech.in`);
+  const [incDate, setIncDate] = useState('2024-02-15');
+  const [fullName, setFullName] = useState('Vikram Sethi');
+  const [username, setUsername] = useState(`founder_${randomNum}`);
+  const [email, setEmail] = useState(`founder_${randomNum}@auratech.in`);
   const [pass1, setPass1] = useState('FounderPass123!');
   const [signupError, setSignupError] = useState('');
   const [isSigningUp, setIsSigningUp] = useState(false);

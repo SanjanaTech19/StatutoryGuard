@@ -68,13 +68,13 @@ def seed_database():
         tasks = calculate_statutory_tasks(company)
         db.save_tasks(tasks)
 
-        # Seed sample document vault item
+        # Seed sample document vault item specifically tied to this demo CIN
         doc_id = str(uuid.uuid4())[:8]
         db.add_vault_doc({
             "doc_id": doc_id,
             "company_cin": company["cin"],
-            "doc_name": "Certificate_of_Incorporation.pdf",
-            "category": "Incorporation",
+            "doc_name": f"{company['name'].split()[0]}_Certificate_of_Incorporation.pdf",
+            "category": "Incorporation & MOA/AOA",
             "upload_date": "2023-05-12",
             "file_path": f"/vault/{company['cin']}/Certificate_of_Incorporation.pdf",
             "dsc_director": company["directors"][0]["name"],
