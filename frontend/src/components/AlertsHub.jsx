@@ -5,7 +5,6 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
   const [selectedForm, setSelectedForm] = useState(tasks[0]?.form_code || 'AOC-4');
   const [dispatchLogs, setDispatchLogs] = useState([]);
   const [dispatchStatus, setDispatchStatus] = useState(null);
-  const [lastDispatchedChannel, setLastDispatchedChannel] = useState(null);
   const [previewMsg, setPreviewMsg] = useState('');
 
   const currentTask = tasks.find((t) => t.form_code === selectedForm) || tasks[0];
@@ -29,8 +28,19 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
         message: previewMsg
       });
 
-      setLastDispatchedChannel(ch);
-      setDispatchStatus(`Successfully dispatched ${ch} reminder for ${selectedForm} to ${recipient}!`);
+      // Handle Real Direct Opening of WhatsApp / Email / SMS Apps
+      if (ch === 'WhatsApp' && res.whatsapp_url) {
+        window.open(res.whatsapp_url, '_blank');
+        setDispatchStatus(`WhatsApp Web / App opened for +${recipient}! Message logged to audit trail.`);
+      } else if (ch === 'Email' && res.mailto_url) {
+        window.location.href = res.mailto_url;
+        setDispatchStatus(`Email client opened for ${recipient}! ${res.smtp_sent ? 'Background SMTP Email Sent!' : 'Message logged to audit trail.'}`);
+      } else if (ch === 'SMS' && res.sms_url) {
+        window.location.href = res.sms_url;
+        setDispatchStatus(`SMS App opened for +${recipient}! Message logged to audit trail.`);
+      } else {
+        setDispatchStatus(`Successfully dispatched ${ch} reminder for ${selectedForm} to ${recipient}!`);
+      }
 
       // Add to local audit log table
       const newLog = {
@@ -67,9 +77,9 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
             <Bell className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-slate-100">Automated Multi-Channel Alerts Hub & Cadence Radar</h2>
+            <h2 className="text-xl font-bold text-slate-100">Automated Multi-Channel Alerts Hub & Real Dispatch Engine</h2>
             <p className="text-xs text-slate-400 mt-1">
-              Dispatches automated pre-deadline reminders across WhatsApp, SMS, and Email to safeguard against ₹5 Lakh statutory penalties.
+              Dispatches real notifications directly via WhatsApp Web, Desktop Mail client / SMTP, and SMS.
             </p>
           </div>
         </div>
@@ -82,10 +92,10 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
           <div className="flex items-center justify-between">
             <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
               <MessageSquare className="h-5 w-5 text-sky-400" />
-              Test Real-Time Alert Dispatch
+              Real-Time Alert Dispatcher
             </h3>
-            <span className="text-[10px] font-extrabold bg-sky-500/10 text-sky-400 border border-sky-500/30 px-2.5 py-0.5 rounded-full">
-              LIVE SIMULATOR
+            <span className="text-[10px] font-extrabold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">
+              LIVE DISPATCH READY
             </span>
           </div>
 
@@ -107,7 +117,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
           {/* Live Message Payload Preview Box */}
           <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-1.5">
             <div className="flex justify-between items-center text-[11px] font-bold text-slate-400">
-              <span>Dispatched Message Payload Preview</span>
+              <span>Message Payload & Action Deep-Link</span>
               <span className="text-sky-400 font-mono">CIN: {company.cin}</span>
             </div>
             <p className="text-xs text-slate-200 font-mono leading-relaxed bg-slate-900/80 p-3 rounded-lg border border-slate-800">
@@ -122,7 +132,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
               className="p-3.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition flex flex-col items-center gap-1.5 shadow-lg shadow-emerald-500/5"
             >
               <MessageSquare className="h-5 w-5 text-emerald-400" />
-              <span>WhatsApp Alert</span>
+              <span>Launch WhatsApp</span>
             </button>
 
             <button
@@ -130,7 +140,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
               className="p-3.5 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-xl text-xs font-bold transition flex flex-col items-center gap-1.5 shadow-lg shadow-sky-500/5"
             >
               <Mail className="h-5 w-5 text-sky-400" />
-              <span>Email Digest</span>
+              <span>Send Email</span>
             </button>
 
             <button
@@ -138,7 +148,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
               className="p-3.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-xl text-xs font-bold transition flex flex-col items-center gap-1.5 shadow-lg shadow-purple-500/5"
             >
               <Smartphone className="h-5 w-5 text-purple-400" />
-              <span>SMS Alert</span>
+              <span>Open SMS</span>
             </button>
           </div>
 
@@ -222,7 +232,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
 
         {dispatchLogs.length === 0 ? (
           <div className="text-center text-slate-500 py-8 text-xs border border-dashed border-slate-800 rounded-xl">
-            No alert dispatches triggered in current session yet. Select a statutory form above and click WhatsApp, Email, or SMS Alert to test!
+            No alert dispatches triggered in current session yet. Select a statutory form above and click Launch WhatsApp, Send Email, or Open SMS to test!
           </div>
         ) : (
           <div className="space-y-2">

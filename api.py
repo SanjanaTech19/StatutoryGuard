@@ -1,6 +1,6 @@
 """
 StatutoryGuard - Python FastAPI REST Backend API Server
-Includes Custom Form Creation & Founder Unique Features.
+Includes Custom Form Creation, Real Multi-Channel WhatsApp/Email/SMS Dispatch, & Founder Unique Features.
 """
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import os
 import uuid
+import urllib.parse
 from datetime import datetime
 
 from config import APP_NAME, APP_TAGLINE, APP_VERSION, SAMPLE_MCA_CIRCULARS
@@ -21,7 +22,7 @@ from utils.pdf_parser import AuditValidatorEngine
 from utils.security import encrypt_bytes, compute_file_hash
 from modules.mca_scraper import MCAScraper
 from modules.legal_assistant import translate_circular_to_plain_english, query_plain_english_assistant
-from modules.alerts import generate_ics_calendar
+from modules.alerts import generate_ics_calendar, send_smtp_email
 
 # Initialize FastAPI App
 app = FastAPI(title=APP_NAME, description=APP_TAGLINE, version=APP_VERSION)
@@ -129,14 +130,12 @@ def admin_login(req: AdminLoginRequest):
 
 @app.post("/api/auth/signup")
 def signup(req: SignupRequest):
-    # Lookup MCA Data & Save Company
     mca_data = MCAScraper.lookup_cin(req.cin)
     mca_data["name"] = req.company_name
     mca_data["entity_type"] = req.entity_type
     mca_data["incorporation_date"] = req.incorporation_date
     mca_data["email"] = req.email
 
-    # Set Director #1 to the Founder's actual full name entered during signup!
     din_num = f"08{abs(hash(req.cin)) % 1000000:06d}"
     mca_data["directors"] = [
         {"din": din_num, "name": req.full_name, "designation": "Managing Director", "dsc_expiry": "2026-12-31"}
@@ -210,7 +209,6 @@ def mark_task_filed(req: MarkFiledRequest):
 
 @app.post("/api/tasks/create-custom")
 def create_custom_task(req: CreateCustomTaskRequest):
-    """API Endpoint allowing founders/admins to add custom compliance forms & internal deadlines."""
     task_id = f"{req.company_cin}_{req.form_code.replace(' ', '_').replace('/', '_')}_{str(uuid.uuid4())[:6]}"
     db.create_custom_task({
         "task_id": task_id,
@@ -266,7 +264,7 @@ def query_assistant(req: QueryAssistantRequest):
     answer = query_plain_english_assistant(req.question)
     return {"question": req.question, "answer": answer}
 
-# Alerts Engine Endpoints
+# Real Multi-Channel Alerts Engine Endpoints
 @app.post("/api/alerts/dispatch-test")
 def dispatch_test_alert(req: DispatchAlertRequest):
     alert_id = str(uuid.uuid4())[:8]
@@ -279,7 +277,35 @@ def dispatch_test_alert(req: DispatchAlertRequest):
         "sent_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "message": req.message
     })
-    return {"status": "success", "alert_id": alert_id, "message": f"Alert dispatched via {req.channel}!"}
+
+    whatsapp_url = ""
+    mailto_url = ""
+    sms_url = ""
+
+    clean_phone = req.recipient.replace("+", "").replace(" ", "").replace("-", "")
+    encoded_msg = urllib.parse.quote(req.message)
+
+    if req.channel == "WhatsApp":
+        whatsapp_url = f"https://api.whatsapp.com/send?phone={clean_phone}&text={encoded_msg}"
+    elif req.channel == "Email":
+        subject = urllib.parse.quote(f"StatutoryGuard Alert: {req.form_code} Compliance Reminder")
+        mailto_url = f"mailto:{req.recipient}?subject={subject}&body={encoded_msg}"
+    elif req.channel == "SMS":
+        sms_url = f"sms:{clean_phone}?body={encoded_msg}"
+
+    smtp_sent = False
+    if req.channel == "Email":
+        smtp_sent = send_smtp_email(req.recipient, f"StatutoryGuard Alert: {req.form_code} Compliance Reminder", req.message)
+
+    return {
+        "status": "success",
+        "alert_id": alert_id,
+        "message": f"Alert dispatched via {req.channel}!",
+        "whatsapp_url": whatsapp_url,
+        "mailto_url": mailto_url,
+        "sms_url": sms_url,
+        "smtp_sent": smtp_sent
+    }
 
 @app.get("/api/alerts/calendar.ics")
 def get_calendar_ics(cin: str):
@@ -364,13 +390,11 @@ def get_admin_overview():
 
 @app.get("/api/admin/export-db")
 def export_database():
-    """Exports full database snapshot as JSON format for backup or external database REST sync."""
     snapshot = db.export_db_snapshot()
     return JSONResponse(content=snapshot, headers={"Content-Disposition": "attachment; filename=statutoryguard_db_backup.json"})
 
 @app.post("/api/admin/sync-supabase")
 def sync_supabase():
-    """Triggers cloud Supabase PostgreSQL synchronization."""
     success, msg = db.sync_to_supabase()
     if not success:
         return {"status": "info", "message": msg}
