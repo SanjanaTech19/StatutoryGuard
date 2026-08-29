@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Calendar, MessageSquare, Mail, Smartphone, Download, CheckCircle2, Clock, Send, ShieldAlert, Sparkles, ExternalLink } from 'lucide-react';
+import { Bell, Calendar, MessageSquare, Mail, Smartphone, Download, CheckCircle2, Clock, Send, ShieldAlert, Sparkles, ExternalLink, Edit3 } from 'lucide-react';
 
 export default function AlertsHub({ company, tasks, onDispatchTest }) {
   const [selectedForm, setSelectedForm] = useState(tasks[0]?.form_code || 'AOC-4');
+  const [customPhone, setCustomPhone] = useState(company.phone || '+919876543210');
+  const [customEmail, setCustomEmail] = useState(company.email || 'founder@startup.in');
   const [dispatchLogs, setDispatchLogs] = useState([]);
   const [dispatchStatus, setDispatchStatus] = useState(null);
   const [previewMsg, setPreviewMsg] = useState('');
@@ -19,7 +21,12 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
 
   const handleTestDispatch = async (ch) => {
     try {
-      const recipient = ch === 'Email' ? company.email || 'founder@startup.in' : company.phone || '+919876543210';
+      const recipient = ch === 'Email' ? customEmail.trim() : customPhone.trim();
+      if (!recipient) {
+        alert('Please enter a valid mobile number or email address.');
+        return;
+      }
+
       const res = await onDispatchTest({
         company_cin: company.cin,
         form_code: selectedForm,
@@ -31,13 +38,13 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
       // Handle Real Direct Opening of WhatsApp / Email / SMS Apps
       if (ch === 'WhatsApp' && res.whatsapp_url) {
         window.open(res.whatsapp_url, '_blank');
-        setDispatchStatus(`WhatsApp Web / App opened for +${recipient}! Message logged to audit trail.`);
+        setDispatchStatus(`WhatsApp Web / App opened for ${recipient}! Message logged to audit trail.`);
       } else if (ch === 'Email' && res.mailto_url) {
         window.location.href = res.mailto_url;
         setDispatchStatus(`Email client opened for ${recipient}! ${res.smtp_sent ? 'Background SMTP Email Sent!' : 'Message logged to audit trail.'}`);
       } else if (ch === 'SMS' && res.sms_url) {
         window.location.href = res.sms_url;
-        setDispatchStatus(`SMS App opened for +${recipient}! Message logged to audit trail.`);
+        setDispatchStatus(`SMS App opened for ${recipient}! Message logged to audit trail.`);
       } else {
         setDispatchStatus(`Successfully dispatched ${ch} reminder for ${selectedForm} to ${recipient}!`);
       }
@@ -79,7 +86,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
           <div>
             <h2 className="text-xl font-bold text-slate-100">Automated Multi-Channel Alerts Hub & Real Dispatch Engine</h2>
             <p className="text-xs text-slate-400 mt-1">
-              Dispatches real notifications directly via WhatsApp Web, Desktop Mail client / SMTP, and SMS.
+              Dispatches real notifications to any WhatsApp number, Email address, or SMS mobile contact.
             </p>
           </div>
         </div>
@@ -112,6 +119,36 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Target Recipient Number & Email Editable Inputs */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+            <div>
+              <label className="block text-[11px] font-bold text-slate-300 mb-1 flex items-center gap-1">
+                <Edit3 className="h-3 w-3 text-emerald-400" />
+                Target WhatsApp / Mobile No.
+              </label>
+              <input
+                type="text"
+                placeholder="+919876543210"
+                value={customPhone}
+                onChange={(e) => setCustomPhone(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500 font-mono"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-slate-300 mb-1 flex items-center gap-1">
+                <Edit3 className="h-3 w-3 text-sky-400" />
+                Target Recipient Email
+              </label>
+              <input
+                type="email"
+                placeholder="founder@startup.in"
+                value={customEmail}
+                onChange={(e) => setCustomEmail(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-sky-500 font-mono"
+              />
+            </div>
           </div>
 
           {/* Live Message Payload Preview Box */}
