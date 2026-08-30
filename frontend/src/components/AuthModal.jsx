@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Shield, Lock, X, CheckCircle2, AlertTriangle, ArrowRight, Sparkles, Building2 } from 'lucide-react';
 
-export default function AuthModal({ isOpen, onClose, onLogin, onSignup }) {
+export default function AuthModal({ isOpen, onClose, onLogin, onSignup, companies = [] }) {
   const [tab, setTab] = useState('login'); // 'login' | 'signup'
 
   // Login form state
+  const [loginCompanyCin, setLoginCompanyCin] = useState('U72900KA2023PTC174821');
   const [loginInput, setLoginInput] = useState('');
   const [loginPass, setLoginPass] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -30,7 +31,7 @@ export default function AuthModal({ isOpen, onClose, onLogin, onSignup }) {
     setLoginSuccess('');
 
     try {
-      await onLogin(loginInput.trim(), loginPass);
+      await onLogin(loginInput.trim(), loginPass, loginCompanyCin);
       setLoginSuccess('Authentication successful! Loading company workspace...');
       setTimeout(() => {
         onClose();
@@ -129,6 +130,36 @@ export default function AuthModal({ isOpen, onClose, onLogin, onSignup }) {
               </div>
             )}
 
+            {/* Target Company Details Selection */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1 flex items-center gap-1">
+                <Building2 className="h-3.5 w-3.5 text-sky-400" />
+                Select Target Startup Company (CIN / Name)
+              </label>
+              {companies && companies.length > 0 ? (
+                <select
+                  value={loginCompanyCin}
+                  onChange={(e) => setLoginCompanyCin(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-medium"
+                >
+                  {companies.map((c) => (
+                    <option key={c.cin} value={c.cin}>
+                      {c.name} ({c.cin})
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. U72900KA2023PTC174821"
+                  value={loginCompanyCin}
+                  onChange={(e) => setLoginCompanyCin(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono"
+                />
+              )}
+            </div>
+
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">Username or Work Email</label>
               <input
@@ -180,7 +211,7 @@ export default function AuthModal({ isOpen, onClose, onLogin, onSignup }) {
                 required
                 value={cin}
                 onChange={(e) => setCin(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-sky-500 font-mono"
               />
             </div>
 

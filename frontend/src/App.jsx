@@ -253,7 +253,9 @@ export default function App() {
         onLogin={handleLogin}
         onAdminLogin={handleAdminLogin}
         onSignup={handleSignup}
+        companies={companies}
       />
+
     );
   }
 
