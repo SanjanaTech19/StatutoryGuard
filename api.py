@@ -663,6 +663,11 @@ if os.path.exists(dist_path):
         if os.path.exists(file_p) and os.path.isfile(file_p):
             return FileResponse(file_p)
         return FileResponse(os.path.join(dist_path, "index.html"))
+else:
+    @app.get("/")
+    def serve_root_fallback():
+        return HTMLResponse("<h2>🛡️ StatutoryGuard Compliance Platform Backend</h2><p>REST API Server Active. View interactive documentation at <a href='/docs'>/docs</a>.</p>")
+
 
 if __name__ == "__main__":
     import uvicorn
