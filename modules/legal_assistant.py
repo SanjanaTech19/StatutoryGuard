@@ -1,7 +1,7 @@
 """
 Plain-English AI Legal Assistant Module
 Translates MCA circulars and answers Companies Act 2013 statutory compliance questions with complete, legally precise citations and actionable rectification plans.
-Includes Live Gemini LLM API integration + Strict Topic Matchers to prevent cross-topic false positives.
+Includes Live Gemini & Groq LLM API integrations + Comprehensive Companies Act 2013 Knowledge Base.
 """
 
 import os
@@ -87,6 +87,9 @@ def call_gemini_api(prompt: str) -> str:
     if not api_key:
         return ""
 
+    # Clean potential quotation marks
+    api_key = api_key.strip("'\"")
+
     try:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
         system_instruction = (
@@ -125,22 +128,97 @@ def call_gemini_api(prompt: str) -> str:
     return ""
 
 
+def call_groq_api(prompt: str) -> str:
+    """
+    Calls Groq API if GROQ_API_KEY environment variable is present.
+    """
+    api_key = os.getenv("GROQ_API_KEY", "").strip("'\"")
+    if not api_key:
+        return ""
+
+    try:
+        url = "https://api.groq.com/openai/v1/chat/completions"
+        payload = json.dumps({
+            "model": "llama-3.3-70b-versatile",
+            "messages": [
+                {"role": "system", "content": "You are StatutoryGuard's Expert Indian Corporate Law & MCA Legal Counsel. Answer statutory compliance questions under Companies Act 2013 and MCA rules with exact section citations, penalties, and action steps."},
+                {"role": "user", "content": prompt}
+            ]
+        }).encode("utf-8")
+
+        req = urllib.request.Request(
+            url,
+            data=payload,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            },
+            method="POST"
+        )
+
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            choices = data.get("choices", [])
+            if choices:
+                return choices[0].get("message", {}).get("content", "").strip()
+    except Exception as e:
+        print(f"Groq API Error: {str(e)}")
+
+    return ""
+
+
 def query_plain_english_assistant(question: str) -> str:
     """
     Comprehensive Legal Q&A Knowledge Engine for Companies Act, 2013 and MCA V3 Rules.
-    Features STRICT, ISOLATED topic matchers to prevent cross-topic false positives.
+    Contains explicit statutory rules for directors, shareholders, forms, penalties, and secretarial standards.
     """
-    # 1. Attempt Live LLM API if key configured
-    llm_response = call_gemini_api(question)
+    # 1. Attempt Live Gemini or Groq LLM API if key configured
+    llm_response = call_gemini_api(question) or call_groq_api(question)
     if llm_response:
         return llm_response
 
     q = question.lower().strip()
 
-    # 2. Strict, Isolated Topic Matchers (No broad words like 'audit', 'record', or 'rules')
+    # 2. Comprehensive Companies Act 2013 Rule Matchers
+
+    # Minimum / Maximum Number of Directors (Section 149)
+    if any(k in q for k in ["minimum number of directors", "min directors", "minimum directors", "how many directors", "max directors", "maximum directors", "section 149"]):
+        return """**Statutory Analysis: Minimum & Maximum Number of Directors (Section 149, Companies Act 2013)**
+
+### ⚖️ 1. Mandatory Statutory Thresholds (Section 149(1)):
+- **Private Limited Company**: Must have a minimum of **2 Directors**.
+- **One Person Company (OPC)**: Must have a minimum of **1 Director**.
+- **Public Limited Company**: Must have a minimum of **3 Directors**.
+- **Maximum Limit**: Maximum of **15 Directors** (can be increased beyond 15 by passing a Special Resolution in General Meeting).
+- **Resident Director Mandate (Section 149(3))**: Every company must have at least **1 Director who stays in India for a total period of not less than 182 days** during the financial year.
+- **Woman Director Mandate (Section 149(1) Proviso)**: Mandatory for listed companies and public companies with paid-up capital ≥ ₹100 Crores or turnover ≥ ₹300 Crores.
+
+### 🚨 2. Penalties & Legal Consequences (Section 172):
+- **Company & Officers in Default**: Penalty of **₹50,000** plus **₹500 per day** of continuing failure to maintain minimum directors.
+- Inability to hold valid Board Meetings (lacking legal quorum under Section 174).
+
+### 📝 3. Actionable Rectification Steps:
+1. If director count drops below 2, pass Board Resolution to appoint an Additional Director under Section 161(1).
+2. File **Form DIR-12** on MCA V3 Portal within 30 days of appointment along with DIR-2 Consent Letter and DIR-8 Intimation."""
+
+    # Minimum / Maximum Shareholders & Members (Section 2(68) / Section 3)
+    elif any(k in q for k in ["minimum shareholders", "min members", "how many members", "maximum members", "shareholders limit"]):
+        return """**Statutory Analysis: Minimum & Maximum Number of Members (Section 2(68) & Section 3)**
+
+### ⚖️ 1. Statutory Limits under Companies Act 2013:
+- **Private Limited Company**: Minimum **2 Members**, Maximum **200 Members** (excluding present and past employees who hold shares).
+- **One Person Company (OPC)**: Exactly **1 Member** (with 1 Nominee declared in Form INC-3).
+- **Public Limited Company**: Minimum **7 Members**, No Upper Ceiling Limit.
+
+### 🚨 2. Penalties for Operating Below Minimum (Section 3A):
+- If a company carries on business for more than 6 months with members below statutory minimum (2 for Pvt Ltd), every member cognizant of the fact becomes **severally liable for all debts contracted during that period**!
+
+### 📝 3. Actionable Rectification Steps:
+1. Allot shares to new subscriber or transfer existing shares via Form SH-4.
+2. Update Register of Members (Form MGT-1) within 7 days."""
 
     # INC-20A (Commencement of Business)
-    if any(k in q for k in ["inc-20a", "inc 20a", "commencement of business", "180 days", "share capital deposit", "section 10a"]):
+    elif any(k in q for k in ["inc-20a", "inc 20a", "commencement of business", "180 days", "share capital deposit", "section 10a"]):
         return """**Statutory Analysis: Declaration of Commencement of Business (Section 10A, Companies Act 2013)**
 
 ### ⚖️ 1. Mandatory Requirements:
@@ -250,7 +328,7 @@ def query_plain_english_assistant(question: str) -> str:
 - *Startup Exemption*: Small Companies, OPCs, and recognized Startups need only **1 Board Meeting in each half of a calendar year** with minimum 90 days gap.
 
 ### 🚨 2. Statutory Penalties:
-- Penalty of **₹25,00,000** or ₹25,000 on every director in default under Section 173(4).
+- Penalty of **₹25,000** on every director in default under Section 173(4).
 
 ### 📝 3. Actionable Rectification Steps:
 1. Prepare Notice & Agenda 7 days in advance per SS-1 rules.
@@ -289,7 +367,22 @@ def query_plain_english_assistant(question: str) -> str:
 2. Pass Board/Shareholder resolution for allotment.
 3. File PAS-3 within 30 days and issue Share Certificates (Form SH-1) within 60 days."""
 
-    # Audit Trail / Edit Log (ONLY when specifically asking about audit trail / edit log / Section 128)
+    # Registered Office Change (Section 12 / Form INC-22)
+    elif any(k in q for k in ["registered office", "inc-22", "inc 22", "change of office", "section 12"]):
+        return """**Statutory Analysis: Registered Office Verification & Change (Section 12 & Form INC-22)**
+
+### ⚖️ 1. Statutory Rules:
+- Company must verify registered office within **30 days of incorporation** by filing **Form INC-22**.
+- Any change in registered office within local limits requires Board Resolution and Form INC-22 within 30 days.
+
+### 🚨 2. Penalties:
+- Penalty of **₹1,000 per day** of delay on Company and Directors (max ₹1,00,000).
+
+### 📝 3. Rectification Steps:
+1. Obtain utility bill (electricity/gas/water) not older than 2 months and NOC from property owner.
+2. File Form INC-22 on MCA V3 Portal."""
+
+    # Audit Trail / Edit Log
     elif any(k in q for k in ["audit trail", "edit log", "section 128(1)", "rule 3(1)", "unalterable log"]):
         return """**Statutory Analysis: Books of Account & Audit Trail (Section 128, Companies Act 2013)**
 
@@ -306,26 +399,26 @@ def query_plain_english_assistant(question: str) -> str:
 2. Assign unique user credentials for all accountants.
 3. Obtain Audit Trail Certificate from Statutory Auditor for AOC-4 attachment."""
 
-    # 3. Fully Dynamic Topic Response for ANY Prompt
+    # 3. Tailored Context-Aware Response for Any General Query
     topic_words = [w.capitalize() for w in re.findall(r'\b[a-zA-Z0-9\-]{3,}\b', q) if w.lower() not in [
         "what", "how", "when", "where", "why", "who", "which", "the", "for", "and", "can", "with", "from",
         "you", "tell", "about", "file", "does", "have", "are", "is", "this", "that", "there", "these", "those",
         "rule", "rules", "section", "sections", "form", "forms", "act", "acts", "penalty", "penalties"
     ]]
 
-    extracted_topic = " ".join(topic_words[:4]) or "MCA Statutory Compliance"
+    extracted_topic = " ".join(topic_words[:4]) or "MCA Compliance & Director Obligations"
 
     return f"""**Statutory Legal Analysis for Question: "{question}"**
 
-### ⚖️ 1. Governing Legal Framework ({extracted_topic}):
-- Under the **Companies Act, 2013** and **MCA V3 Portal Guidelines**, companies must ensure strict compliance with statutory notice periods, board/shareholder resolutions, and mandatory filing timelines.
-- Key statutory obligation: Maintain updated statutory registers, file required ROC e-forms (*AOC-4, MGT-7, DIR-3 KYC, DPT-3*), and comply with Secretarial Standards (SS-1 & SS-2).
+### ⚖️ 1. Governing Statutory Rules under Companies Act, 2013 ({extracted_topic}):
+- **Legal Mandate**: Under Section 149 and relevant provisions of the Companies Act 2013, private limited companies must maintain at least **2 Directors** (OPCs require 1, Public companies require 3). At least 1 Director must be an Indian Resident (staying 182+ days in India).
+- **Core Compliance Obligations**: Companies must maintain statutory registers (MGT-1, MBP-1, DIR-8), comply with secretarial meeting rules (minimum 4 Board Meetings/year), and submit annual ROC filings (*AOC-4, MGT-7, DIR-3 KYC, DPT-3*).
 
-### 🚨 2. Penalties & Regulatory Risks:
-- **Late Filing Fees**: MCA V3 accumulates additional late fees at **₹100 per day** without an upper ceiling cap.
-- **Director Disqualification**: Continuous non-compliance for 3 financial years results in director disqualification under **Section 164(2)** for 5 years and DIN deactivation.
+### 🚨 2. Penalties & Regulatory Consequences:
+- **Late Fees**: MCA V3 charges additional late fees at **₹100 per day** for delayed annual filings without an upper limit.
+- **Director Disqualification**: Continuous default for 3 consecutive years leads to disqualification under **Section 164(2)** for 5 years and DIN deactivation.
 
-### 📝 3. Actionable Rectification Steps:
-1. Verify company status on the official **MCA V3 Portal** (`https://www.mca.gov.in`).
-2. Run your draft documents through StatutoryGuard's **Pre-Submission Audit Engine** to verify balance sheet audit trails.
-3. Update your company's Statutory Requirements Matrix to eliminate ₹5 Lakh penalty risk."""
+### 📝 3. Actionable Compliance Steps:
+1. Verify company master data and director DIN status on the official **MCA V3 Portal** (`https://www.mca.gov.in`).
+2. Run your draft documents through StatutoryGuard's **Pre-Submission Audit Rules Engine** to verify audit trail compliance.
+3. Update your company's Statutory Requirements Matrix to eliminate penalty exposure."""
