@@ -36,7 +36,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
         message: previewMsg
       });
 
-      // Handle Real Direct Opening of WhatsApp / Gmail / SMS Apps
+      // Handle Real Direct Opening of WhatsApp / Gmail / Google Messages Apps
       if (ch === 'WhatsApp') {
         const cleanPhone = recipient.replace(/[^0-9+]/g, '');
         const encodedMsg = encodeURIComponent(previewMsg);
@@ -45,34 +45,25 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
           window.open(`https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMsg}`, '_blank');
           setDispatchStatus(`WhatsApp Web opened for ${recipient}! Message logged to audit trail.`);
         } else {
-          // Native WhatsApp Desktop / Mobile App Protocol (Opens WhatsApp app directly without new browser tabs!)
           window.location.href = `whatsapp://send?phone=${cleanPhone}&text=${encodedMsg}`;
           setDispatchStatus(`Launched WhatsApp Desktop/Mobile App directly for ${recipient}!`);
         }
       } else if (ch === 'Email' && res.mailto_url) {
         window.open(res.mailto_url, '_blank');
         setDispatchStatus(`Gmail Web Compose opened for ${recipient}! Click Send to dispatch email.`);
-      } else if (ch === 'SMS') {
+      } else if (ch === 'SMS' || ch === 'Google Messages') {
+        // Copy SMS message to clipboard automatically
         try {
           await navigator.clipboard.writeText(previewMsg);
           setCopiedSms(true);
-          setTimeout(() => setCopiedSms(false), 4000);
+          setTimeout(() => setCopiedSms(false), 5000);
         } catch (clipErr) {
           console.error(clipErr);
         }
 
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
-        if (isMobile) {
-          const cleanPhone = recipient.replace(/[^0-9+]/g, '');
-          const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-          const delimiter = isIOS ? '&' : '?';
-          window.location.href = `sms:${cleanPhone}${delimiter}body=${encodeURIComponent(previewMsg)}`;
-          setDispatchStatus(`SMS message copied & mobile messaging app launched for ${recipient}!`);
-        } else {
-          window.open('https://messages.google.com/web', '_blank');
-          setDispatchStatus(`SMS message copied to clipboard! Opened Google Messages Web for ${recipient}.`);
-        }
+        // Open Google Messages Web Directly
+        window.open('https://messages.google.com/web', '_blank');
+        setDispatchStatus(`Google Messages Web opened for ${recipient}! Compliance payload copied to clipboard.`);
       } else {
         setDispatchStatus(`Successfully dispatched ${ch} reminder for ${selectedForm} to ${recipient}!`);
       }
@@ -82,7 +73,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
         alert_id: res.alert_id || `ALT-${Math.floor(Math.random()*1000)}`,
         company_cin: company.cin,
         form_code: selectedForm,
-        channel: ch,
+        channel: 'Google Messages',
         recipient: recipient,
         sent_at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         status: 'DELIVERED',
@@ -114,7 +105,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
           <div>
             <h2 className="text-xl font-bold text-slate-100">Automated Multi-Channel Alerts Hub & Real Dispatch Engine</h2>
             <p className="text-xs text-slate-400 mt-1">
-              Dispatches real notifications directly via WhatsApp App / Web, Gmail Web Compose, and SMS.
+              Dispatches real notifications directly via WhatsApp App, Gmail Web Compose, and Google Messages.
             </p>
           </div>
         </div>
@@ -197,7 +188,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
               className="p-3.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition flex flex-col items-center gap-1.5 shadow-lg shadow-emerald-500/5"
             >
               <MessageSquare className="h-5 w-5 text-emerald-400" />
-              <span>Launch WhatsApp App</span>
+              <span>Launch WhatsApp</span>
             </button>
 
             <button
@@ -209,11 +200,11 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
             </button>
 
             <button
-              onClick={() => handleTestDispatch('SMS')}
+              onClick={() => handleTestDispatch('Google Messages')}
               className="p-3.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-xl text-xs font-bold transition flex flex-col items-center gap-1.5 shadow-lg shadow-purple-500/5"
             >
               <Smartphone className="h-5 w-5 text-purple-400" />
-              <span>Open SMS</span>
+              <span>Google Messages</span>
             </button>
           </div>
 
@@ -225,7 +216,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
               </div>
               {copiedSms && (
                 <div className="text-[11px] text-purple-300 font-normal pl-6">
-                  ✨ SMS message automatically copied to your clipboard! Paste directly into your messaging app.
+                  ✨ SMS payload automatically copied to clipboard! Paste directly into Google Messages.
                 </div>
               )}
             </div>
@@ -304,7 +295,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
 
         {dispatchLogs.length === 0 ? (
           <div className="text-center text-slate-500 py-8 text-xs border border-dashed border-slate-800 rounded-xl">
-            No alert dispatches triggered in current session yet. Select a statutory form above and click Launch WhatsApp App, Send Gmail, or Open SMS to test!
+            No alert dispatches triggered in current session yet. Select a statutory form above and click Launch WhatsApp, Send Gmail, or Google Messages to test!
           </div>
         ) : (
           <div className="space-y-2">
