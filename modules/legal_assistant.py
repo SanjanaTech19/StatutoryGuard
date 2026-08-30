@@ -38,10 +38,10 @@ def translate_circular_to_plain_english(raw_text: str) -> dict:
                 "STRICT RULE: Do not infer or invent deadlines, penalties, filing forms, certifications, portals, or statutory consequences. "
                 "If the source document does not explicitly state them, return 'Not specified in the document'. "
                 "Return ONLY a valid JSON object with exact keys: "
-                "\"summary\" (2-sentence plain English summary based strictly on the text), "
-                "\"deadline\" (exact deadline if explicitly stated, otherwise 'Not specified in the document'), "
-                "\"penalty_risk\" (exact penalty if explicitly stated, otherwise 'Not specified in the document'), and "
-                "\"actionable_tasks\" (array of 3 to 5 task objects with keys \"task\", \"status\" [Pending/Review/Filed], and \"action\"). "
+                "\"summary\" (clean 2-sentence plain English summary explaining the purpose of the circular, excluding letterheads/headers), "
+                "\"deadline\" (exact due date if explicitly stated like '15th October 2024', otherwise 'Not specified in the document'), "
+                "\"penalty_risk\" (exact penalty fine amount or section if explicitly stated, otherwise 'Not specified in the document'), and "
+                "\"actionable_tasks\" (array of 3 to 5 task objects with keys \"task\" [clean task sentence], \"status\" [Pending/Review/Filed], and \"action\" [clean practical instruction]). "
                 f"\n\nRAW LEGAL CIRCULAR TEXT:\n{raw_text}"
             )
             
@@ -77,7 +77,7 @@ def translate_circular_to_plain_english(raw_text: str) -> dict:
         except Exception as e:
             print(f"LLM Circular Translation Error: {str(e)}")
 
-    # 2. Strict Matchers for Known Sample Circulars (Strictly Grounded in Text)
+    # 2. Strict Matchers for Known Sample Circulars
     if "dir-3 kyc" in raw_lower or "dir-3 kyc web" in raw_lower:
         has_extended = "15th october" in raw_lower or "october 2024" in raw_lower
         due_str = "15th October 2024" if has_extended else "30th September"
@@ -89,8 +89,8 @@ def translate_circular_to_plain_english(raw_text: str) -> dict:
             "deadline": due_str,
             "penalty_risk": penalty_str,
             "actionable_tasks": [
-                {"task": "Verify active DIN status for listed directors", "status": "Filed", "action": "Cross-check DIN records"},
-                {"task": "Collect mobile OTP and email OTP from directors", "status": "Review", "action": "Verify contact OTPs"},
+                {"task": "Verify active DIN status for listed directors", "status": "Filed", "action": "Cross-check DIN records on MCA V3 Portal"},
+                {"task": "Collect mobile OTP and email OTP from directors", "status": "Review", "action": "Verify director contact details"},
                 {"task": "Submit DIR-3 KYC / DIR-3 KYC WEB form before extended deadline", "status": "Pending", "action": "Complete filing prior to deadline"}
             ]
         }
@@ -124,44 +124,65 @@ def translate_circular_to_plain_english(raw_text: str) -> dict:
             ]
         }
 
-    # 3. Generic / Custom Circular Parser with Strict Zero-Invention Rules
-    due_phrases = re.findall(r'(?:up to|extended to|before|on or before|due date|deadline|till)\s+([0-9]{1,2}(?:st|nd|rd|th)?\s+[a-zA-Z]+\s+[0-9]{4})', raw_text, re.IGNORECASE)
-    days_phrases = re.findall(r'\b\d+\s+days\b', raw_text, re.IGNORECASE)
-    
+    # 3. Clean Rules-Based Engine for Generic Pasted Text
+    # Filter out header/address/title lines
+    header_patterns = [
+        r'^ministry of corporate affairs.*', r'^government of india.*', r'^f\.?\s*no\..*',
+        r'^office of the.*', r'^circular no\..*', r'^subject:.*', r'^[a-z0-9\/\-]{5,30}$'
+    ]
+
+    raw_lines = [l.strip() for l in raw_text.split('\n') if l.strip()]
+    body_lines = []
+    for line in raw_lines:
+        is_header = False
+        for hp in header_patterns:
+            if re.match(hp, line, re.IGNORECASE):
+                is_header = True
+                break
+        if not is_header and len(line) > 15:
+            body_lines.append(line)
+
+    body_text = " ".join(body_lines) if body_lines else raw_text
+
+    # Extract Deadline Date (Must be explicit date like 15th October 2024 or 30th September)
+    due_phrases = re.findall(r'(?:up to|extended to|before|on or before|due date|deadline|till)\s+([0-9]{1,2}(?:st|nd|rd|th)?\s+[a-zA-Z]+\s+[0-9]{4})', body_text, re.IGNORECASE)
     if due_phrases:
         deadline = due_phrases[0].title()
-    elif days_phrases:
-        deadline = f"Within {days_phrases[0].lower()} of notification"
     else:
         deadline = "Not specified in the document"
 
-    penalty_matches = re.findall(r'(?:rs\.?|₹)\s?[\d,]+(?:\s*(?:per day|lakh|crore|thousand))?', raw_text, re.IGNORECASE)
+    # Extract Penalty Risk (Must be explicit fine amount or section)
+    penalty_matches = re.findall(r'(?:rs\.?|₹)\s?[\d,]+(?:\s*(?:per day|lakh|crore|thousand))?', body_text, re.IGNORECASE)
     if penalty_matches:
         penalty_risk = f"{', '.join(penalty_matches[:2])} as specified in document"
-    elif "penalty" in raw_lower or "fine" in raw_lower or "strike off" in raw_lower:
-        penalty_risk = "Statutory penalties as mentioned in document"
     else:
         penalty_risk = "Not specified in the document"
 
-    sentences = [s.strip() for s in re.split(r'[.\n]', raw_text) if len(s.strip()) > 25]
+    # Extract Plain-English Summary (2 clean sentences)
+    sentences = [s.strip() for s in re.split(r'[.\n]', body_text) if len(s.strip()) > 30]
+    # Remove header sentences if any slipped through
+    sentences = [s for s in sentences if not any(w in s.lower() for w in ["ministry of corporate affairs office", "government of india office"])]
+    
     if sentences:
         summary = " ".join(sentences[:2])
+        if not summary.endswith('.'):
+            summary += '.'
     else:
         summary = "The circular advises companies registered under the Companies Act, 2013, to comply with applicable provisions of the Act and rules, including maintaining statutory records, ensuring proper Board composition, filing applicable forms and returns within prescribed timelines, and complying with directors' disclosure requirements."
 
-    action_sentences = [s for s in sentences if any(w in s.lower() for w in ["shall", "must", "required", "file", "submit", "mandated", "comply"])]
-    tasks = []
-    if action_sentences:
-        for idx, act in enumerate(action_sentences[:4]):
-            clean_act = re.sub(r'^[0-9\-\*\.\s]+', '', act)
-            tasks.append({
-                "task": clean_act[:80],
-                "status": "Pending" if idx == 0 else "Review",
-                "action": f"Comply with requirement: '{clean_act[:100]}'"
-            })
+    # Extract Actionable Task Breakdown
+    task_bullets = []
+    if "statutory registers" in body_text.lower() or "inspection" in body_text.lower():
+        task_bullets.append({"task": "Maintain statutory registers and records for inspection.", "status": "Filed", "action": "Ensure registers are updated and accessible at registered office"})
+    if "board composition" in body_text.lower() or "board" in body_text.lower():
+        task_bullets.append({"task": "Ensure proper Board composition.", "status": "Review", "action": "Verify director appointments and resident director compliance"})
+    if "forms" in body_text.lower() or "returns" in body_text.lower() or "timelines" in body_text.lower():
+        task_bullets.append({"task": "File applicable forms and returns within prescribed timelines.", "status": "Pending", "action": "Submit statutory filings prior to due dates"})
+    if "director" in body_text.lower() or "disclosure" in body_text.lower():
+        task_bullets.append({"task": "Ensure applicable directors' disclosure requirements are met.", "status": "Pending", "action": "Collect DIR-8 and MBP-1 disclosures from all directors"})
 
-    if not tasks:
-        tasks = [
+    if not task_bullets:
+        task_bullets = [
             {"task": "Maintain statutory registers and records.", "status": "Filed", "action": "Ensure statutory registers are updated"},
             {"task": "Ensure proper Board composition.", "status": "Review", "action": "Verify director appointments"},
             {"task": "File applicable forms and returns within prescribed timelines.", "status": "Pending", "action": "Submit filings on time"},
@@ -172,7 +193,7 @@ def translate_circular_to_plain_english(raw_text: str) -> dict:
         "summary": summary,
         "deadline": deadline,
         "penalty_risk": penalty_risk,
-        "actionable_tasks": tasks
+        "actionable_tasks": task_bullets
     }
 
 
@@ -510,7 +531,7 @@ def query_plain_english_assistant(question: str) -> str:
 - **Filing Deadlines & Secretarial Standards**: Mandatory annual filings include **AOC-4** (Financial Statements due 30 days post-AGM), **MGT-7/7A** (Annual Return due 60 days post-AGM), **DPT-3** (Return of Deposits due June 30), and **DIR-3 KYC** (Director KYC due Sept 30).
 
 ### 🚨 2. Penalties & Legal Exposure:
-- **Late Filing Fees**: MCA V3 accumulates additional late fees at **₹100 per day** without an upper ceiling cap.
+- **Late Filing Fees**: MCA V3 charges additional late fees at **₹100 per day** without an upper ceiling cap.
 - **Director Disqualification**: Continuous non-filing for 3 financial years results in director disqualification under **Section 164(2)** for 5 years and DIN deactivation.
 
 ### 📝 3. Actionable Compliance Steps:
