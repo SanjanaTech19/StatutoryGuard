@@ -189,7 +189,7 @@ export default function DocumentVault({ cin, data, onUpload }) {
                   {/* Decrypt, View & Download Action Buttons */}
                   <div className="flex items-center gap-2 shrink-0">
                     <a
-                      href={`/api/vault/download/${doc.doc_id}`}
+                      href={`/api/vault/view/${doc.doc_id}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-3 py-1.5 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-lg text-xs font-bold transition flex items-center gap-1"
