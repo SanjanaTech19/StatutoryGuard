@@ -1,6 +1,6 @@
 """
 StatutoryGuard - Python FastAPI REST Backend API Server
-Includes Custom Form Creation, Real Multi-Channel WhatsApp/Gmail/SMS Dispatch, Cloud SMS Gateway, & Founder Unique Features.
+Includes Custom Form Creation, Real Multi-Channel WhatsApp/Gmail Dispatch, RFC 5545 iCalendar Generator, & Founder Unique Features.
 """
 
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Depends
@@ -22,7 +22,7 @@ from utils.pdf_parser import AuditValidatorEngine
 from utils.security import encrypt_bytes, compute_file_hash
 from modules.mca_scraper import MCAScraper
 from modules.legal_assistant import translate_circular_to_plain_english, query_plain_english_assistant
-from modules.alerts import generate_ics_calendar, send_smtp_email, send_cloud_sms
+from modules.alerts import generate_ics_calendar, send_smtp_email
 
 # Initialize FastAPI App
 app = FastAPI(title=APP_NAME, description=APP_TAGLINE, version=APP_VERSION)
@@ -280,7 +280,6 @@ def dispatch_test_alert(req: DispatchAlertRequest):
 
     whatsapp_url = ""
     mailto_url = ""
-    sms_url = ""
 
     clean_phone = req.recipient.replace("+", "").replace(" ", "").replace("-", "")
     encoded_msg = urllib.parse.quote(req.message)
@@ -290,17 +289,10 @@ def dispatch_test_alert(req: DispatchAlertRequest):
     elif req.channel == "Email":
         subject = urllib.parse.quote(f"StatutoryGuard Alert: {req.form_code} Compliance Reminder")
         mailto_url = f"https://mail.google.com/mail/?view=cm&fs=1&to={req.recipient}&su={subject}&body={encoded_msg}"
-    elif req.channel == "SMS" or req.channel == "Google Messages":
-        sms_url = f"sms:{clean_phone}?body={encoded_msg}"
 
     smtp_sent = False
     if req.channel == "Email":
         smtp_sent = send_smtp_email(req.recipient, f"StatutoryGuard Alert: {req.form_code} Compliance Reminder", req.message)
-
-    sms_sent = False
-    sms_msg = ""
-    if req.channel == "SMS" or req.channel == "Google Messages":
-        sms_sent, sms_msg = send_cloud_sms(req.recipient, req.message)
 
     return {
         "status": "success",
@@ -308,17 +300,20 @@ def dispatch_test_alert(req: DispatchAlertRequest):
         "message": f"Alert dispatched via {req.channel}!",
         "whatsapp_url": whatsapp_url,
         "mailto_url": mailto_url,
-        "sms_url": sms_url,
-        "smtp_sent": smtp_sent,
-        "sms_sent": sms_sent,
-        "sms_msg": sms_msg
+        "smtp_sent": smtp_sent
     }
 
 @app.get("/api/alerts/calendar.ics")
 def get_calendar_ics(cin: str):
     tasks = db.get_tasks_for_company(cin)
     ics_text = generate_ics_calendar(tasks)
-    return Response(content=ics_text, media_type="text/calendar", headers={"Content-Disposition": f"attachment; filename={cin}_mca_deadlines.ics"})
+    return Response(
+        content=ics_text.encode("utf-8"),
+        media_type="text/calendar; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="{cin}_mca_deadlines.ics"'
+        }
+    )
 
 # Encrypted Document Vault & DSC Tracker Endpoints
 @app.get("/api/vault/{cin}")
