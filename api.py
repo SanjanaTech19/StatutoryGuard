@@ -19,7 +19,7 @@ from database.db_client import DatabaseClient
 from database.seed_data import seed_database
 from utils.compliance_calculator import calculate_statutory_tasks, compute_compliance_metrics
 from utils.pdf_parser import AuditValidatorEngine
-from utils.security import encrypt_bytes, compute_file_hash
+from utils.security import encrypt_bytes, decrypt_bytes, compute_file_hash
 from modules.mca_scraper import MCAScraper
 from modules.legal_assistant import translate_circular_to_plain_english, query_plain_english_assistant
 from modules.alerts import generate_ics_calendar, send_smtp_email

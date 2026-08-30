@@ -381,6 +381,15 @@ class DatabaseClient:
         conn.close()
         return [dict(r) for r in rows]
 
+    def get_vault_doc(self, doc_id: str) -> Optional[Dict[str, Any]]:
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM document_vault WHERE doc_id = ?", (doc_id,))
+        row = cursor.fetchone()
+        conn.close()
+        return dict(row) if row else None
+
+
     # Alert Logs
     def log_alert(self, alert_dict: Dict[str, Any]) -> bool:
         conn = self._get_connection()
