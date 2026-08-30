@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Calendar, MessageSquare, Mail, Download, CheckCircle2, Clock, Send, ShieldAlert, Sparkles, ExternalLink, Edit3, Play } from 'lucide-react';
+import { Bell, Calendar, MessageSquare, Mail, Download, CheckCircle2, Clock, Send, ShieldAlert, Sparkles, ExternalLink, Edit3, Play, Smartphone, Globe } from 'lucide-react';
 
 export default function AlertsHub({ company, tasks, onDispatchTest }) {
   const [selectedForm, setSelectedForm] = useState(tasks[0]?.form_code || 'AOC-4');
@@ -40,15 +40,21 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
 
       // Handle Real Direct Opening of WhatsApp / Gmail Apps
       if (ch === 'WhatsApp') {
-        const cleanPhone = recipient.replace(/[^0-9+]/g, '');
+        const cleanPhone = recipient.replace(/[^0-9]/g, '');
         const encodedMsg = encodeURIComponent(finalMsg);
         
         if (useWeb) {
-          window.open(`https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMsg}`, '_blank');
-          setDispatchStatus(`WhatsApp Web opened for ${recipient}! Message logged to audit trail.`);
+          const webUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMsg}`;
+          window.open(webUrl, '_blank');
+          setDispatchStatus(`WhatsApp Web/App link opened for ${recipient}! Click Send in WhatsApp.`);
         } else {
-          window.location.href = `whatsapp://send?phone=${cleanPhone}&text=${encodedMsg}`;
-          setDispatchStatus(`Launched WhatsApp Desktop/Mobile App directly for ${recipient}!`);
+          // Attempt native protocol + open web link as robust fallback
+          const webUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMsg}`;
+          window.open(webUrl, '_blank');
+          try {
+            window.location.href = `whatsapp://send?phone=${cleanPhone}&text=${encodedMsg}`;
+          } catch (e) {}
+          setDispatchStatus(`Dispatched WhatsApp alert to ${recipient}! Click Send in WhatsApp window.`);
         }
       } else if (ch === 'Email' && res.mailto_url) {
         window.open(res.mailto_url, '_blank');
@@ -170,21 +176,29 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
             </p>
           </div>
 
-          {/* Channel Dispatch Buttons (WhatsApp & Email) */}
-          <div className="grid grid-cols-2 gap-4 pt-1">
+          {/* Channel Dispatch Buttons (WhatsApp Web, WhatsApp App & Gmail) */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+            <button
+              onClick={() => handleTestDispatch('WhatsApp', true)}
+              className="p-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition flex flex-col items-center justify-center gap-1 shadow-lg shadow-emerald-500/5 py-3.5"
+            >
+              <Globe className="h-5 w-5 text-emerald-400" />
+              <span>WhatsApp Web</span>
+            </button>
+
             <button
               onClick={() => handleTestDispatch('WhatsApp', false)}
-              className="p-3.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition flex flex-col items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/5 py-4"
+              className="p-3 bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/30 rounded-xl text-xs font-bold transition flex flex-col items-center justify-center gap-1 shadow-lg shadow-teal-500/5 py-3.5"
             >
-              <MessageSquare className="h-6 w-6 text-emerald-400" />
-              <span>Launch WhatsApp</span>
+              <Smartphone className="h-5 w-5 text-teal-300" />
+              <span>WhatsApp App</span>
             </button>
 
             <button
               onClick={() => handleTestDispatch('Email')}
-              className="p-3.5 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-xl text-xs font-bold transition flex flex-col items-center justify-center gap-1.5 shadow-lg shadow-sky-500/5 py-4"
+              className="p-3 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-xl text-xs font-bold transition flex flex-col items-center justify-center gap-1 shadow-lg shadow-sky-500/5 py-3.5"
             >
-              <Mail className="h-6 w-6 text-sky-400" />
+              <Mail className="h-5 w-5 text-sky-400" />
               <span>Send Gmail</span>
             </button>
           </div>
@@ -231,129 +245,88 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
                 <span>Add to Google Calendar</span>
               </a>
             </div>
-
-            {/* Upcoming Deadline List Preview Box */}
-            <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2 text-xs">
-              <span className="text-[10px] font-extrabold text-slate-400 block uppercase tracking-wider">Upcoming Calendar Events ({tasks.filter(t=>t.status!=='Filed').length})</span>
-              <div className="space-y-1.5 max-h-[110px] overflow-y-auto pr-1">
-                {tasks.filter(t=>t.status!=='Filed').slice(0, 4).map((t, idx) => (
-                  <div key={idx} className="flex justify-between items-center bg-slate-900/90 p-2 rounded-lg border border-slate-800/80 text-[11px]">
-                    <span className="font-bold text-sky-400">{t.form_code}: <span className="text-slate-200 font-medium">{t.title}</span></span>
-                    <span className="font-mono text-amber-400 font-bold">{t.due_date}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
-          {/* Interactive Automated Pre-Deadline Reminders Cadence Schedule */}
+          {/* Pre-Deadline Cadence Schedule */}
           <div className="glass-panel rounded-2xl p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-xs font-extrabold text-sky-400 uppercase tracking-wider flex items-center gap-2">
-                <Clock className="h-4 w-4 text-sky-400" />
-                Automated Pre-Deadline Alert Cadence Schedule
+              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <Clock className="h-5 w-5 text-amber-400" />
+                Pre-Deadline Escalation Cadence
               </h3>
-              <span className="text-[10px] font-extrabold text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-                CLICK TO TEST CADENCE
+              <span className="text-[10px] font-extrabold bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2.5 py-0.5 rounded-full">
+                4-STAGE CADENCE
               </span>
             </div>
 
-            <div className="space-y-2 text-xs">
-              {/* T-30 Days */}
-              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
-                <div>
-                  <span className="font-bold text-slate-200 block">T-30 Days Before Due Date</span>
-                  <span className="text-[10px] text-slate-400">Email Digest to Co-Founders & CA</span>
-                </div>
-                <button
-                  onClick={() => handleTestDispatch('Email', false, 'T-30')}
-                  className="px-2.5 py-1 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0"
-                >
-                  <Play className="h-3 w-3" /> Test T-30 Email
-                </button>
-              </div>
+            <div className="space-y-3">
+              {[
+                { stage: 'T-30 Days', channel: 'Email', status: 'Email Notification', color: 'text-sky-400 bg-sky-500/10 border-sky-500/30' },
+                { stage: 'T-15 Days', channel: 'WhatsApp', status: 'WhatsApp Message', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' },
+                { stage: 'T-7 Days', channel: 'Calendar', status: 'Calendar Event Alarm', color: 'text-amber-400 bg-amber-500/10 border-amber-500/30' },
+                { stage: 'T-1 Day', channel: 'WhatsApp', status: 'Urgent WhatsApp Escalation', color: 'text-rose-400 bg-rose-500/10 border-rose-500/30' }
+              ].map((c, idx) => (
+                <div key={idx} className="flex items-center justify-between bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs">
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] border ${c.color}`}>{c.stage}</span>
+                    <span className="font-semibold text-slate-200">{c.status}</span>
+                  </div>
 
-              {/* T-15 Days */}
-              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
-                <div>
-                  <span className="font-bold text-slate-200 block">T-15 Days Before Due Date</span>
-                  <span className="text-[10px] text-slate-400">WhatsApp Alert to Managing Director</span>
+                  <button
+                    onClick={() => handleTestDispatch(c.channel === 'Email' ? 'Email' : 'WhatsApp', false, c.stage)}
+                    className="flex items-center gap-1 text-[11px] font-bold text-sky-400 hover:text-sky-300 transition"
+                  >
+                    <Play className="h-3 w-3 fill-sky-400" />
+                    <span>Test {c.stage}</span>
+                  </button>
                 </div>
-                <button
-                  onClick={() => handleTestDispatch('WhatsApp', false, 'T-15')}
-                  className="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0"
-                >
-                  <Play className="h-3 w-3" /> Test T-15 WhatsApp
-                </button>
-              </div>
-
-              {/* T-7 Days */}
-              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
-                <div>
-                  <span className="font-bold text-slate-200 block">T-7 Days Before Due Date</span>
-                  <span className="text-[10px] text-slate-400">Calendar iCal Alarm & Priority Notice</span>
-                </div>
-                <button
-                  onClick={() => handleTestDispatch('Email', false, 'T-7')}
-                  className="px-2.5 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0"
-                >
-                  <Play className="h-3 w-3" /> Test T-7 Alarm
-                </button>
-              </div>
-
-              {/* T-1 Day */}
-              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
-                <div>
-                  <span className="font-bold text-slate-200 block">T-1 Day Emergency Alert</span>
-                  <span className="text-[10px] text-slate-400">High-Priority Escalation Shield</span>
-                </div>
-                <button
-                  onClick={() => handleTestDispatch('WhatsApp', false, 'T-1 EMERGENCY')}
-                  className="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0"
-                >
-                  <Play className="h-3 w-3" /> Test T-1 Escalation
-                </button>
-              </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Dispatch Audit Logs Table */}
+      {/* Dispatched Alerts Audit Log */}
       <div className="glass-panel rounded-2xl p-6 space-y-4">
         <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-sky-400" />
-          Alert Dispatch Audit Log History ({dispatchLogs.length})
+          <ShieldAlert className="h-5 w-5 text-indigo-400" />
+          Dispatched Alerts Audit Log
         </h3>
 
         {dispatchLogs.length === 0 ? (
-          <div className="text-center text-slate-500 py-8 text-xs border border-dashed border-slate-800 rounded-xl">
-            No alert dispatches triggered in current session yet. Select a statutory form above and click Launch WhatsApp or Send Gmail to test!
+          <div className="text-center text-slate-500 py-6 text-xs">
+            No alert dispatches logged in this session yet. Click 'WhatsApp Web', 'WhatsApp App', or 'Send Gmail' above to test dispatching.
           </div>
         ) : (
-          <div className="space-y-2">
-            {dispatchLogs.map((log, idx) => (
-              <div key={idx} className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between text-xs gap-3">
-                <div className="flex items-center gap-3">
-                  <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${
-                    log.channel.includes('WhatsApp')
-                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                      : 'bg-sky-500/10 text-sky-400 border border-sky-500/30'
-                  }`}>
-                    {log.channel.includes('WhatsApp') ? <MessageSquare className="h-4 w-4" /> : <Mail className="h-4 w-4" />}
-                  </div>
-
-                  <div>
-                    <span className="font-bold text-slate-100">{log.form_code} ({log.channel})</span>
-                    <p className="text-[10px] text-slate-400 font-mono">Recipient: {log.recipient} &bull; Time: {log.sent_at}</p>
-                  </div>
-                </div>
-
-                <span className="text-[10px] font-extrabold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-full flex items-center gap-1 shrink-0">
-                  <CheckCircle2 className="h-3 w-3" /> {log.status}
-                </span>
-              </div>
-            ))}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-slate-800 text-slate-400 text-[11px] uppercase tracking-wider">
+                  <th className="py-2.5 px-3">Alert ID</th>
+                  <th className="py-2.5 px-3">Form Code</th>
+                  <th className="py-2.5 px-3">Channel</th>
+                  <th className="py-2.5 px-3">Recipient</th>
+                  <th className="py-2.5 px-3">Timestamp</th>
+                  <th className="py-2.5 px-3 text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60">
+                {dispatchLogs.map((log, idx) => (
+                  <tr key={idx} className="hover:bg-slate-900/40 font-medium">
+                    <td className="py-2.5 px-3 text-sky-400 font-mono text-[11px]">{log.alert_id}</td>
+                    <td className="py-2.5 px-3 text-slate-200">{log.form_code}</td>
+                    <td className="py-2.5 px-3 text-slate-300">{log.channel}</td>
+                    <td className="py-2.5 px-3 text-slate-300 font-mono text-[11px]">{log.recipient}</td>
+                    <td className="py-2.5 px-3 text-slate-400">{log.sent_at}</td>
+                    <td className="py-2.5 px-3 text-right">
+                      <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                        {log.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
