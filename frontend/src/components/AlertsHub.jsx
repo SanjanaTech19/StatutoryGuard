@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Calendar, MessageSquare, Mail, Smartphone, Download, CheckCircle2, Clock, Send, ShieldAlert, Sparkles, ExternalLink, Edit3, Copy } from 'lucide-react';
+import { Bell, Calendar, MessageSquare, Mail, Download, CheckCircle2, Clock, Send, ShieldAlert, Sparkles, ExternalLink, Edit3 } from 'lucide-react';
 
 export default function AlertsHub({ company, tasks, onDispatchTest }) {
   const [selectedForm, setSelectedForm] = useState(tasks[0]?.form_code || 'AOC-4');
@@ -7,7 +7,6 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
   const [customEmail, setCustomEmail] = useState(company.email || 'founder@startup.in');
   const [dispatchLogs, setDispatchLogs] = useState([]);
   const [dispatchStatus, setDispatchStatus] = useState(null);
-  const [copiedSms, setCopiedSms] = useState(false);
   const [previewMsg, setPreviewMsg] = useState('');
 
   const currentTask = tasks.find((t) => t.form_code === selectedForm) || tasks[0];
@@ -24,7 +23,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
     try {
       const recipient = ch === 'Email' ? customEmail.trim() : customPhone.trim();
       if (!recipient) {
-        alert('Please enter a valid mobile number or email address.');
+        alert('Please enter a valid phone number or email address.');
         return;
       }
 
@@ -36,7 +35,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
         message: previewMsg
       });
 
-      // Handle Real Direct Opening of WhatsApp / Gmail / Cloud SMS Apps
+      // Handle Real Direct Opening of WhatsApp / Gmail Apps
       if (ch === 'WhatsApp') {
         const cleanPhone = recipient.replace(/[^0-9+]/g, '');
         const encodedMsg = encodeURIComponent(previewMsg);
@@ -51,9 +50,6 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
       } else if (ch === 'Email' && res.mailto_url) {
         window.open(res.mailto_url, '_blank');
         setDispatchStatus(`Gmail Web Compose opened for ${recipient}! Click Send to dispatch email.`);
-      } else if (ch === 'SMS' || ch === 'Cloud SMS') {
-        // Option 1: 1-Click Background Silent Cloud SMS (No browser tabs opened!)
-        setDispatchStatus(res.sms_msg || `Cloud SMS Gateway dispatched text directly to ${recipient}!`);
       } else {
         setDispatchStatus(`Successfully dispatched ${ch} reminder for ${selectedForm} to ${recipient}!`);
       }
@@ -63,7 +59,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
         alert_id: res.alert_id || `ALT-${Math.floor(Math.random()*1000)}`,
         company_cin: company.cin,
         form_code: selectedForm,
-        channel: 'Cloud SMS Gateway',
+        channel: ch,
         recipient: recipient,
         sent_at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         status: 'DELIVERED',
@@ -95,7 +91,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
           <div>
             <h2 className="text-xl font-bold text-slate-100">Automated Multi-Channel Alerts Hub & Real Dispatch Engine</h2>
             <p className="text-xs text-slate-400 mt-1">
-              Dispatches real notifications directly via WhatsApp App, Gmail Web Compose, and Cloud SMS Gateway.
+              Dispatches real automated reminders across WhatsApp App / Web and Gmail.
             </p>
           </div>
         </div>
@@ -130,12 +126,12 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
             </select>
           </div>
 
-          {/* Target Recipient Number & Email Editable Inputs */}
+          {/* Target Recipient Phone & Email Editable Inputs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-950 p-3.5 rounded-xl border border-slate-800">
             <div>
               <label className="block text-[11px] font-bold text-slate-300 mb-1 flex items-center gap-1">
                 <Edit3 className="h-3 w-3 text-emerald-400" />
-                Target WhatsApp / Mobile No.
+                Target WhatsApp Mobile No.
               </label>
               <input
                 type="text"
@@ -152,7 +148,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
               </label>
               <input
                 type="email"
-                placeholder="sanjana.rajasekar06@gmail.com"
+                placeholder="founder@startup.in"
                 value={customEmail}
                 onChange={(e) => setCustomEmail(e.target.value)}
                 className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-sky-500 font-mono"
@@ -171,30 +167,22 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
             </p>
           </div>
 
-          {/* Channel Dispatch Buttons */}
-          <div className="grid grid-cols-3 gap-3 pt-1">
+          {/* Channel Dispatch Buttons (WhatsApp & Email) */}
+          <div className="grid grid-cols-2 gap-4 pt-1">
             <button
               onClick={() => handleTestDispatch('WhatsApp', false)}
-              className="p-3.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition flex flex-col items-center gap-1.5 shadow-lg shadow-emerald-500/5"
+              className="p-3.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition flex flex-col items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/5 py-4"
             >
-              <MessageSquare className="h-5 w-5 text-emerald-400" />
+              <MessageSquare className="h-6 w-6 text-emerald-400" />
               <span>Launch WhatsApp</span>
             </button>
 
             <button
               onClick={() => handleTestDispatch('Email')}
-              className="p-3.5 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-xl text-xs font-bold transition flex flex-col items-center gap-1.5 shadow-lg shadow-sky-500/5"
+              className="p-3.5 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-xl text-xs font-bold transition flex flex-col items-center justify-center gap-1.5 shadow-lg shadow-sky-500/5 py-4"
             >
-              <Mail className="h-5 w-5 text-sky-400" />
+              <Mail className="h-6 w-6 text-sky-400" />
               <span>Send Gmail</span>
-            </button>
-
-            <button
-              onClick={() => handleTestDispatch('Cloud SMS')}
-              className="p-3.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-xl text-xs font-bold transition flex flex-col items-center gap-1.5 shadow-lg shadow-purple-500/5"
-            >
-              <Smartphone className="h-5 w-5 text-purple-400" />
-              <span>Send Cloud SMS</span>
             </button>
           </div>
 
@@ -260,7 +248,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
               </div>
               <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
                 <span className="font-bold text-slate-200">T-7 Days Before Due Date</span>
-                <span className="text-[11px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full">Urgent SMS & iCal Alarm</span>
+                <span className="text-[11px] font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full">Calendar iCal Alarm</span>
               </div>
               <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
                 <span className="font-bold text-slate-200">T-1 Day Emergency Alert</span>
@@ -280,7 +268,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
 
         {dispatchLogs.length === 0 ? (
           <div className="text-center text-slate-500 py-8 text-xs border border-dashed border-slate-800 rounded-xl">
-            No alert dispatches triggered in current session yet. Select a statutory form above and click Launch WhatsApp, Send Gmail, or Send Cloud SMS to test!
+            No alert dispatches triggered in current session yet. Select a statutory form above and click Launch WhatsApp or Send Gmail to test!
           </div>
         ) : (
           <div className="space-y-2">
@@ -290,11 +278,9 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
                   <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${
                     log.channel === 'WhatsApp'
                       ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                      : log.channel === 'Email'
-                      ? 'bg-sky-500/10 text-sky-400 border border-sky-500/30'
-                      : 'bg-purple-500/10 text-purple-400 border border-purple-500/30'
+                      : 'bg-sky-500/10 text-sky-400 border border-sky-500/30'
                   }`}>
-                    {log.channel === 'WhatsApp' ? <MessageSquare className="h-4 w-4" /> : log.channel === 'Email' ? <Mail className="h-4 w-4" /> : <Smartphone className="h-4 w-4" />}
+                    {log.channel === 'WhatsApp' ? <MessageSquare className="h-4 w-4" /> : <Mail className="h-4 w-4" />}
                   </div>
 
                   <div>
