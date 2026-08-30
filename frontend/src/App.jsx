@@ -12,16 +12,11 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  const [user, setUser] = useState({
-    username: 'founder',
-    email: 'founder@innovatetech.in',
-    full_name: 'Rajesh Kumar',
-    role: 'founder',
-    company_cin: 'U72900KA2023PTC174821'
-  });
+  const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [companies, setCompanies] = useState([]);
-  const [selectedCin, setSelectedCin] = useState('U72900KA2023PTC174821');
+  const [selectedCin, setSelectedCin] = useState('');
+
 
   
   // Feature states
