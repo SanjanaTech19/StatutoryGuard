@@ -1,13 +1,15 @@
 """
 Automated Alerts & Notification Engine Module
-Sends real-time deadline notifications via Email (SMTP + mailto), SMS, and WhatsApp deep-links.
-Generates Google/Outlook ICS calendar sync files.
+Sends real-time deadline notifications via Email (SMTP + Gmail), SMS (Fast2SMS / Twilio Cloud API + Deep Link),
+and WhatsApp (App Protocol + Web). Generates Google/Outlook ICS calendar sync files.
 """
 
 import os
 import uuid
 import smtplib
 import urllib.parse
+import urllib.request
+import json
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
@@ -41,6 +43,46 @@ def send_smtp_email(to_email: str, subject: str, body_text: str) -> bool:
     except Exception as e:
         print(f"SMTP Error: {str(e)}")
         return False
+
+def send_cloud_sms(to_phone: str, message_text: str) -> tuple[bool, str]:
+    """
+    Sends background SMS directly to Indian mobile numbers via Fast2SMS / Twilio Cloud API if configured.
+    """
+    fast2sms_key = os.getenv("FAST2SMS_API_KEY", "")
+    clean_phone = to_phone.replace("+", "").replace(" ", "").replace("-", "")
+    if clean_phone.startswith("91") and len(clean_phone) == 12:
+        clean_phone = clean_phone[2:]
+
+    if fast2sms_key:
+        try:
+            url = "https://www.fast2sms.com/dev/bulkV2"
+            payload = json.dumps({
+                "route": "q",
+                "message": message_text,
+                "language": "english",
+                "flash": 0,
+                "numbers": clean_phone
+            }).encode("utf-8")
+
+            req = urllib.request.Request(
+                url,
+                data=payload,
+                headers={
+                    "authorization": fast2sms_key,
+                    "Content-Type": "application/json"
+                },
+                method="POST"
+            )
+
+            with urllib.request.urlopen(req) as resp:
+                result = json.loads(resp.read().decode("utf-8"))
+                if result.get("return"):
+                    return True, "SMS sent successfully via Fast2SMS Cloud API!"
+                return False, result.get("message", "Fast2SMS dispatch failed.")
+        except Exception as e:
+            return False, f"Cloud SMS Gateway Error: {str(e)}"
+
+    return False, "Fast2SMS / Twilio API key not configured in .env."
 
 def generate_ics_calendar(tasks: list) -> str:
     """Generate iCalendar (.ics) content for all compliance deadlines."""
