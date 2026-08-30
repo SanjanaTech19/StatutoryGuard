@@ -5,13 +5,42 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![GitHub Repository](https://img.shields.io/badge/GitHub-StatutoryGuard-emerald.svg)](https://github.com/SanjanaTech19/StatutoryGuard)
+[![Live Vercel App](https://img.shields.io/badge/Vercel-Live--App-black.svg?logo=vercel)](https://statutory-guard.vercel.app)
 [![Tech Stack](https://img.shields.io/badge/Stack-React%20%7C%20FastAPI%20%7C%20Supabase-purple.svg)](#-tech-stack)
 
 ---
 
-## 📌 Project Overview
+## 📌 Problem Statement
 
-**StatutoryGuard** eliminates statutory regulatory overhead for early-stage Indian startup founders, saving **15–20 hours monthly** and safeguarding against **₹5 Lakh statutory penalties** and MCA company strike-off risks. Founders juggle 50+ annual and event-based compliances; StatutoryGuard automates tracking, pre-submission audit verification, plain-English legal circular translation, multi-channel alerts, and secure document vaulting.
+Running a startup in India is tough, but managing government rules under the Ministry of Corporate Affairs (MCA) makes it even harder. Early-stage startup founders are legally required to file **over 50 mandatory forms** every year—such as annual financial returns (AOC-4, MGT-7), director KYC (DIR-3), deposit reports (DPT-3), and quarterly board meeting records.
+
+This creates 3 major problems for founders:
+
+1. 💰 **Heavy Daily Fines**: Missing a filing deadline results in strict daily penalties (like ₹100 per day with no upper limit, flat ₹5,000 director fees, or total fines up to **₹5 Lakhs**). In severe cases, the government can block directors or strike off the company.
+2. 🤯 **Confusing Legal Jargon**: Government circulars are full of complicated legal language. Early-stage startups cannot afford expensive law firms to read and explain these rules.
+3. ❌ **Form Rejections**: A simple math mistake in a balance sheet or a missing signature causes the government to reject the filing, triggering extra late fees and failing investor due diligence.
+
+Instead of building their business, founders waste **15 to 20 hours every month** manually tracking forms and deadlines, living in constant fear of expensive legal penalties.
+
+---
+
+## 🛡️ The Solution: How StatutoryGuard Works
+
+**StatutoryGuard** is an AI-driven compliance assistant that acts as a digital shield for Indian startups. It automates all Ministry of Corporate Affairs (MCA) regulatory rules so founders never miss a deadline or pay a single rupee in legal penalties.
+
+### ⚙️ 5-Step Automated Workflow
+
+1. 📊 **Custom Compliance Timeline**: Enter your Company CIN and Incorporation Date. StatutoryGuard instantly creates a personalized timeline showing every form you must file (`AOC-4`, `MGT-7`, `DIR-3 KYC`, `DPT-3`, `Board Meetings`), along with exact due dates and potential penalty amounts.
+2. 🛡️ **Pre-Submission Audit Engine**: Before you submit financial forms to the government, upload your PDF balance sheet. StatutoryGuard automatically checks if $\text{Total Assets} = \text{Total Liabilities} + \text{Equity}$, verifies 8-digit Director DIN numbers, and flags missing signatures so the government doesn't reject your form.
+3. 🤖 **Plain-English AI Legal Assistant**: When the government releases confusing new legal circulars, StatutoryGuard translates them into simple 4-step task cards, telling you exactly what to do without any legal jargon.
+4. 🔔 **Multi-Channel Alerts Hub**: Stay ahead of deadlines. StatutoryGuard sends automated reminders straight to your **WhatsApp** (`WhatsApp Web` & `WhatsApp App`), **Email**, and **Google Calendar** at 30 days, 15 days, and 1 day before any form is due.
+5. 🔒 **Encrypted Document Vault**: Safely store all your Digital Signatures (DSC), Incorporation Certificates, and Board Minutes in a bank-grade AES-256 encrypted vault that automatically alerts you before your director's DSC expires.
+
+---
+
+## 🌐 Live Web Application & Cloud Deployment
+
+- **Live Web Application (Vercel)**: **[https://statutory-guard.vercel.app](https://statutory-guard.vercel.app)** 🚀
 
 ---
 
@@ -48,9 +77,6 @@
 - **Valid Binary PDF Downloads**: Streams 100% valid binary PDF 1.4 objects (`/api/vault/download/{doc_id}`) eliminating file corruption errors.
 - **Director DSC Expiry Radar**: Tracks digital signature expiration dates for active directors.
 
-### 7. ☁️ 1-Click Production Cloud Deployment
-- **Pre-Configured Blueprints**: Includes production `Dockerfile`, `Procfile`, and `render.yaml` for Render, Northflank, Railway, and AWS.
-
 ---
 
 ## 🛠️ Tech Stack
@@ -59,6 +85,7 @@
 - **Backend API**: Python 3.10+, FastAPI REST Server, Uvicorn, Gunicorn
 - **Database**: SQLite (`statutoryguard.db`), Cloud Supabase PostgreSQL (`rcjdwxiymiekxrncdbgc`)
 - **Security & Encryption**: Cryptography (AES-256 Fernet, SHA-256, PBKDF2 Password Hashing)
+- **Deployment**: Vercel Serverless (`@vercel/python`), Docker, Render, Procfile
 
 ---
 
@@ -76,7 +103,7 @@ pip install -r requirements.txt
 cd frontend && npm install && npm run build && cd ..
 ```
 
-### 3. Run the Platform
+### 3. Run the Local Server
 ```bash
 python api.py
 ```
