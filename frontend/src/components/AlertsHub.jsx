@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Calendar, MessageSquare, Mail, Download, CheckCircle2, Clock, Send, ShieldAlert, Sparkles, ExternalLink, Edit3 } from 'lucide-react';
+import { Bell, Calendar, MessageSquare, Mail, Download, CheckCircle2, Clock, Send, ShieldAlert, Sparkles, ExternalLink, Edit3, Play } from 'lucide-react';
 
 export default function AlertsHub({ company, tasks, onDispatchTest }) {
   const [selectedForm, setSelectedForm] = useState(tasks[0]?.form_code || 'AOC-4');
@@ -19,7 +19,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
     }
   }, [selectedForm, currentTask]);
 
-  const handleTestDispatch = async (ch, useWeb = false) => {
+  const handleTestDispatch = async (ch, useWeb = false, customStage = null) => {
     try {
       const recipient = ch === 'Email' ? customEmail.trim() : customPhone.trim();
       if (!recipient) {
@@ -27,18 +27,21 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
         return;
       }
 
+      const stagePrefix = customStage ? `[${customStage} CADENCE] ` : '';
+      const finalMsg = `${stagePrefix}${previewMsg}`;
+
       const res = await onDispatchTest({
         company_cin: company.cin,
         form_code: selectedForm,
         channel: ch,
         recipient: recipient,
-        message: previewMsg
+        message: finalMsg
       });
 
       // Handle Real Direct Opening of WhatsApp / Gmail Apps
       if (ch === 'WhatsApp') {
         const cleanPhone = recipient.replace(/[^0-9+]/g, '');
-        const encodedMsg = encodeURIComponent(previewMsg);
+        const encodedMsg = encodeURIComponent(finalMsg);
         
         if (useWeb) {
           window.open(`https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMsg}`, '_blank');
@@ -51,7 +54,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
         window.open(res.mailto_url, '_blank');
         setDispatchStatus(`Gmail Web Compose opened for ${recipient}! Click Send to dispatch email.`);
       } else {
-        setDispatchStatus(`Successfully dispatched ${ch} reminder for ${selectedForm} to ${recipient}!`);
+        setDispatchStatus(`Triggered ${customStage || ch} compliance alert simulation!`);
       }
 
       // Add to local audit log table
@@ -59,11 +62,11 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
         alert_id: res.alert_id || `ALT-${Math.floor(Math.random()*1000)}`,
         company_cin: company.cin,
         form_code: selectedForm,
-        channel: ch,
+        channel: customStage ? `${ch} (${customStage})` : ch,
         recipient: recipient,
         sent_at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         status: 'DELIVERED',
-        message: previewMsg
+        message: finalMsg
       };
 
       setDispatchLogs((prev) => [newLog, ...prev]);
@@ -80,6 +83,13 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&dates=${dates}`;
   };
 
+  const getOutlookCalendarUrl = () => {
+    if (!currentTask) return '#';
+    const title = encodeURIComponent(`StatutoryGuard: ${currentTask.form_code} MCA Filing Due`);
+    const details = encodeURIComponent(`Mandatory MCA filing due date for ${currentTask.title}.\nAvoid penalty exposure up to ₹${currentTask.max_penalty?.toLocaleString('en-IN')}.`);
+    return `https://outlook.office.com/calendar/0/deeplink/compose?subject=${title}&body=${details}&startdt=${currentTask.due_date}T09:00:00Z&enddt=${currentTask.due_date}T10:00:00Z`;
+  };
+
   return (
     <div className="space-y-6">
       {/* Banner */}
@@ -89,9 +99,9 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
             <Bell className="h-6 w-6" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-slate-100">Automated Multi-Channel Alerts Hub & Real Dispatch Engine</h2>
+            <h2 className="text-xl font-bold text-slate-100">Automated Multi-Channel Alerts Hub & Cadence Radar</h2>
             <p className="text-xs text-slate-400 mt-1">
-              Dispatches real automated reminders across WhatsApp App / Web and Gmail.
+              Dispatches automated pre-deadline reminders across WhatsApp, Gmail, and Google/Outlook Calendars.
             </p>
           </div>
         </div>
@@ -202,57 +212,124 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
           <div className="glass-panel rounded-2xl p-6 space-y-4">
             <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
               <Calendar className="h-5 w-5 text-indigo-400" />
-              Calendar Sync Radar (.ics & Google Calendar)
+              Calendar Sync Radar (Google, Outlook & .ics iCal)
             </h3>
             <p className="text-xs text-slate-400">
-              Sync all statutory due dates directly to Google Calendar, Outlook, or Apple iCal with automated 7-day alarms.
+              Sync form statutory due dates directly to Google Calendar, Outlook Web, or Apple iCal with automated 7-day alarms.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <a
                 href={`/api/alerts/calendar.ics?cin=${company.cin}`}
                 download={`${company.name}_mca_deadlines.ics`}
-                className="inline-flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-indigo-500/20 transition text-center"
+                className="inline-flex items-center justify-center gap-1.5 py-2.5 px-3 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold text-[11px] rounded-xl shadow-lg shadow-indigo-500/20 transition text-center"
               >
-                <Download className="h-4 w-4" />
-                <span>Download .ics File</span>
+                <Download className="h-3.5 w-3.5" />
+                <span>Download .ics</span>
               </a>
 
               <a
                 href={getGoogleCalendarUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 py-3 px-4 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-500/30 font-bold text-xs rounded-xl transition text-center"
+                className="inline-flex items-center justify-center gap-1.5 py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-500/30 font-bold text-[11px] rounded-xl transition text-center"
               >
-                <ExternalLink className="h-4 w-4 text-sky-400" />
-                <span>Add to Google Calendar</span>
+                <ExternalLink className="h-3.5 w-3.5 text-sky-400" />
+                <span>Google Calendar</span>
               </a>
+
+              <a
+                href={getOutlookCalendarUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-500/30 font-bold text-[11px] rounded-xl transition text-center"
+              >
+                <ExternalLink className="h-3.5 w-3.5 text-purple-400" />
+                <span>Outlook Web</span>
+              </a>
+            </div>
+
+            {/* Upcoming Deadline List Preview Box */}
+            <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2 text-xs">
+              <span className="text-[10px] font-extrabold text-slate-400 block uppercase tracking-wider">Upcoming Calendar Events ({tasks.filter(t=>t.status!=='Filed').length})</span>
+              <div className="space-y-1.5 max-h-[110px] overflow-y-auto pr-1">
+                {tasks.filter(t=>t.status!=='Filed').slice(0, 4).map((t, idx) => (
+                  <div key={idx} className="flex justify-between items-center bg-slate-900/90 p-2 rounded-lg border border-slate-800/80 text-[11px]">
+                    <span className="font-bold text-sky-400">{t.form_code}: <span className="text-slate-200 font-medium">{t.title}</span></span>
+                    <span className="font-mono text-amber-400 font-bold">{t.due_date}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Automated Pre-Deadline Reminders Cadence Timeline */}
-          <div className="glass-panel rounded-2xl p-6 space-y-3">
-            <h3 className="text-xs font-extrabold text-sky-400 uppercase tracking-wider flex items-center gap-2">
-              <Clock className="h-4 w-4 text-sky-400" />
-              Automated Pre-Deadline Alert Cadence Schedule
-            </h3>
+          {/* Interactive Automated Pre-Deadline Reminders Cadence Schedule */}
+          <div className="glass-panel rounded-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-extrabold text-sky-400 uppercase tracking-wider flex items-center gap-2">
+                <Clock className="h-4 w-4 text-sky-400" />
+                Automated Pre-Deadline Alert Cadence Schedule
+              </h3>
+              <span className="text-[10px] font-extrabold text-slate-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                CLICK TO TEST CADENCE
+              </span>
+            </div>
 
             <div className="space-y-2 text-xs">
-              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
-                <span className="font-bold text-slate-200">T-30 Days Before Due Date</span>
-                <span className="text-[11px] font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-full">Email Digest to Co-Founders & CA</span>
+              {/* T-30 Days */}
+              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
+                <div>
+                  <span className="font-bold text-slate-200 block">T-30 Days Before Due Date</span>
+                  <span className="text-[10px] text-slate-400">Email Digest to Co-Founders & CA</span>
+                </div>
+                <button
+                  onClick={() => handleTestDispatch('Email', false, 'T-30')}
+                  className="px-2.5 py-1 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0"
+                >
+                  <Play className="h-3 w-3" /> Test T-30 Email
+                </button>
               </div>
-              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
-                <span className="font-bold text-slate-200">T-15 Days Before Due Date</span>
-                <span className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">WhatsApp Alert to Managing Director</span>
+
+              {/* T-15 Days */}
+              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
+                <div>
+                  <span className="font-bold text-slate-200 block">T-15 Days Before Due Date</span>
+                  <span className="text-[10px] text-slate-400">WhatsApp Alert to Managing Director</span>
+                </div>
+                <button
+                  onClick={() => handleTestDispatch('WhatsApp', false, 'T-15')}
+                  className="px-2.5 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0"
+                >
+                  <Play className="h-3 w-3" /> Test T-15 WhatsApp
+                </button>
               </div>
-              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
-                <span className="font-bold text-slate-200">T-7 Days Before Due Date</span>
-                <span className="text-[11px] font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-full">Calendar iCal Alarm</span>
+
+              {/* T-7 Days */}
+              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
+                <div>
+                  <span className="font-bold text-slate-200 block">T-7 Days Before Due Date</span>
+                  <span className="text-[10px] text-slate-400">Calendar iCal Alarm & Priority Notice</span>
+                </div>
+                <button
+                  onClick={() => handleTestDispatch('Email', false, 'T-7')}
+                  className="px-2.5 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0"
+                >
+                  <Play className="h-3 w-3" /> Test T-7 Alarm
+                </button>
               </div>
-              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between">
-                <span className="font-bold text-slate-200">T-1 Day Emergency Alert</span>
-                <span className="text-[11px] font-bold text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full">High-Priority Escalation Shield</span>
+
+              {/* T-1 Day */}
+              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between gap-2">
+                <div>
+                  <span className="font-bold text-slate-200 block">T-1 Day Emergency Alert</span>
+                  <span className="text-[10px] text-slate-400">High-Priority Escalation Shield</span>
+                </div>
+                <button
+                  onClick={() => handleTestDispatch('WhatsApp', false, 'T-1 EMERGENCY')}
+                  className="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg text-[10px] font-bold transition flex items-center gap-1 shrink-0"
+                >
+                  <Play className="h-3 w-3" /> Test T-1 Escalation
+                </button>
               </div>
             </div>
           </div>
@@ -276,11 +353,11 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
               <div key={idx} className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between text-xs gap-3">
                 <div className="flex items-center gap-3">
                   <div className={`h-9 w-9 rounded-xl flex items-center justify-center shrink-0 ${
-                    log.channel === 'WhatsApp'
+                    log.channel.includes('WhatsApp')
                       ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
                       : 'bg-sky-500/10 text-sky-400 border border-sky-500/30'
                   }`}>
-                    {log.channel === 'WhatsApp' ? <MessageSquare className="h-4 w-4" /> : <Mail className="h-4 w-4" />}
+                    {log.channel.includes('WhatsApp') ? <MessageSquare className="h-4 w-4" /> : <Mail className="h-4 w-4" />}
                   </div>
 
                   <div>
