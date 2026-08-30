@@ -16,8 +16,13 @@ from utils.auth_utils import hash_password, verify_password
 class DatabaseClient:
     def __init__(self, db_path: str = DB_FILE):
         self.db_path = db_path
-        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+        try:
+            os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+        except Exception:
+            self.db_path = "/tmp/statutoryguard.db"
+            os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_sqlite()
+
 
     def _get_connection(self):
         conn = sqlite3.connect(self.db_path)

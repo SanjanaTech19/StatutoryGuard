@@ -22,7 +22,11 @@ APP_TAGLINE = "Zero Penalty Risk. Zero Legal Jargon. 100% Audit-Ready."
 APP_VERSION = "2.0.0"
 
 # Database & Supabase settings
-DB_FILE = os.path.join(os.path.dirname(__file__), "database", "statutoryguard.db")
+if os.getenv("VERCEL") or os.getenv("AWS_EXECUTION_ENV") or not os.access(os.path.dirname(__file__), os.W_OK):
+    DB_FILE = "/tmp/statutoryguard.db"
+else:
+    DB_FILE = os.path.join(os.path.dirname(__file__), "database", "statutoryguard.db")
+
 SUPABASE_URL = os.getenv("SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY", "")
 
