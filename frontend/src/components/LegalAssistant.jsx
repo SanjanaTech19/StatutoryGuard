@@ -1,73 +1,91 @@
 import React, { useState } from 'react';
-import { Bot, FileText, Send, Sparkles, AlertCircle, Clock, CheckCircle, ShieldAlert, Scale, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Bot, FileText, Send, Sparkles, AlertCircle, Clock, CheckCircle, ShieldAlert, Scale, AlertTriangle, CheckCircle2, ArrowRightCircle } from 'lucide-react';
 
 function FormattedLegalResponse({ text }) {
   if (!text) return null;
 
-  // Split into lines for structured rendering
   const lines = text.split('\n');
   const elements = [];
-  let currentSection = null;
 
   lines.forEach((line, idx) => {
-    const trimmed = line.trim();
+    const trimmed = line.strip ? line.strip() : line.trim();
     if (!trimmed) return;
+
+    // Actionable Rectification Steps Section Header (e.g. ### 📝 3. Actionable Rectification Steps:)
+    if (trimmed.includes('Actionable Rectification Steps') || trimmed.includes('Actionable Compliance Steps')) {
+      elements.push(
+        <div key={idx} className="flex items-center gap-2 font-extrabold text-sm text-emerald-400 border-b border-emerald-500/30 pb-2 mt-4 mb-3">
+          <CheckCircle2 className="h-5 w-5 text-emerald-400 shrink-0" />
+          <span className="uppercase tracking-wider">ACTIONABLE RECTIFICATION STEPS</span>
+        </div>
+      );
+      return;
+    }
 
     // Headings (e.g. ### or **Header**)
     if (trimmed.startsWith('###') || (trimmed.startsWith('**') && trimmed.endsWith('**') && trimmed.length < 80)) {
       const cleanHeading = trimmed.replace(/^[#*\s]+|[*\s]+$/g, '');
+      const isPenalty = cleanHeading.toLowerCase().includes('penalty') || cleanHeading.toLowerCase().includes('consequence');
+      
       elements.push(
-        <div key={idx} className="flex items-center gap-2 font-extrabold text-sm text-sky-400 border-b border-slate-800 pb-1.5 mt-3 mb-2">
-          <Scale className="h-4 w-4 text-sky-400 shrink-0" />
+        <div key={idx} className={`flex items-center gap-2 font-extrabold text-sm border-b pb-1.5 mt-4 mb-2 ${
+          isPenalty ? 'text-amber-400 border-amber-500/30' : 'text-sky-400 border-slate-800'
+        }`}>
+          {isPenalty ? <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" /> : <Scale className="h-4 w-4 text-sky-400 shrink-0" />}
           <span>{cleanHeading}</span>
         </div>
       );
       return;
     }
 
-    // Violation Card (e.g. - **Violation A: ...)
-    if (trimmed.includes('Violation') || trimmed.includes('Rule 3') || trimmed.includes('Section 128(5)')) {
-      const cleanText = trimmed.replace(/^[*\-\s]+/, '').replace(/\*\*/g, '');
+    // Individual Action Steps (e.g. 1. Pass Board Resolution... or 2. File Form...)
+    if (/^\d+\./.test(trimmed)) {
+      const match = trimmed.match(/^(\d+)\.\s*(.*)/);
+      const stepNum = match ? match[1] : '';
+      const stepContent = match ? match[2] : trimmed;
+
+      const parts = stepContent.split(/(\*\*.*?\*\*)/g);
+
       elements.push(
-        <div key={idx} className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-200 text-xs my-2 space-y-1">
-          <div className="flex items-center gap-2 font-extrabold text-rose-300 text-[11px] uppercase tracking-wider">
-            <AlertCircle className="h-4 w-4 text-rose-400 shrink-0" />
-            <span>STATUTORY VIOLATION IDENTIFIED</span>
+        <div key={idx} className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 text-xs my-2 flex items-start gap-3 shadow-sm hover:border-emerald-500/50 transition">
+          <div className="h-6 w-6 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-extrabold flex items-center justify-center text-[11px] shrink-0 mt-0.5">
+            {stepNum}
           </div>
-          <p className="font-semibold text-slate-100 leading-relaxed">{cleanText}</p>
-        </div>
-      );
-      return;
-    }
-
-    // Penalties Section Banner
-    if (trimmed.includes('Penalties') || trimmed.includes('Fine') || trimmed.includes('Imprisonment')) {
-      const cleanText = trimmed.replace(/^[*\-\s]+/, '').replace(/\*\*/g, '');
-      elements.push(
-        <div key={idx} className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs my-2 space-y-1">
-          <div className="flex items-center gap-2 font-extrabold text-amber-300 text-[11px] uppercase tracking-wider">
-            <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />
-            <span>PENALTY & LEGAL EXPOSURE</span>
+          <div className="flex-1 text-slate-100 font-medium leading-relaxed">
+            {parts.map((part, pIdx) => {
+              if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={pIdx} className="font-extrabold text-emerald-300">{part.slice(2, -2)}</strong>;
+              }
+              return part;
+            })}
           </div>
-          <p className="font-semibold text-slate-100 leading-relaxed">{cleanText}</p>
         </div>
       );
       return;
     }
 
-    // Action Step (e.g. 1. Deploy... or - Action Plan...)
-    if (/^\d+\./.test(trimmed) || trimmed.includes('Rectification') || trimmed.includes('Action Plan')) {
-      const cleanText = trimmed.replace(/\*\*/g, '');
+    // Standard Bullet Points (e.g. - Private Limited Company...)
+    if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
+      const cleanBullet = trimmed.replace(/^[*\-\s]+/, '');
+      const parts = cleanBullet.split(/(\*\*.*?\*\*)/g);
+
       elements.push(
-        <div key={idx} className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-200 text-xs my-1.5 flex items-start gap-2.5">
-          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-          <span className="font-semibold text-slate-100 leading-relaxed">{cleanText}</span>
+        <div key={idx} className="flex items-start gap-2.5 my-1.5 pl-1 text-xs text-slate-200 leading-relaxed">
+          <ArrowRightCircle className="h-3.5 w-3.5 text-sky-400 shrink-0 mt-0.5" />
+          <p className="flex-1">
+            {parts.map((part, pIdx) => {
+              if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={pIdx} className="font-extrabold text-slate-100">{part.slice(2, -2)}</strong>;
+              }
+              return part;
+            })}
+          </p>
         </div>
       );
       return;
     }
 
-    // Standard Text Line with inline **bold** parsing
+    // Standard Text Line
     const parts = trimmed.split(/(\*\*.*?\*\*)/g);
     elements.push(
       <p key={idx} className="text-xs text-slate-200 leading-relaxed my-1">
