@@ -12,10 +12,17 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState({
+    username: 'founder',
+    email: 'founder@innovatetech.in',
+    full_name: 'Rajesh Kumar',
+    role: 'founder',
+    company_cin: 'U72900KA2023PTC174821'
+  });
   const [activeTab, setActiveTab] = useState('dashboard');
   const [companies, setCompanies] = useState([]);
-  const [selectedCin, setSelectedCin] = useState('');
+  const [selectedCin, setSelectedCin] = useState('U72900KA2023PTC174821');
+
   
   // Feature states
   const [dashboardData, setDashboardData] = useState(null);
@@ -246,12 +253,15 @@ export default function App() {
   if (!user) {
     return (
       <AuthModal
+        isOpen={true}
+        onClose={() => {}}
         onLogin={handleLogin}
         onAdminLogin={handleAdminLogin}
         onSignup={handleSignup}
       />
     );
   }
+
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
