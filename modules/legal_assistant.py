@@ -1,9 +1,14 @@
 """
 Plain-English AI Legal Assistant Module
 Translates MCA circulars and answers Companies Act 2013 statutory compliance questions with complete, legally precise citations and actionable rectification plans.
+Includes Live Gemini LLM API integration + Fallback Context-Aware Legal Intelligence Engine.
 """
 
+import os
 import re
+import json
+import urllib.request
+import urllib.parse
 from typing import Dict, Any
 from config import SAMPLE_MCA_CIRCULARS
 
@@ -74,14 +79,66 @@ def translate_circular_to_plain_english(raw_text: str) -> dict:
     }
 
 
+def call_gemini_api(prompt: str) -> str:
+    """
+    Calls Gemini API if GEMINI_API_KEY or GOOGLE_API_KEY environment variable is present.
+    """
+    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        return ""
+
+    try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+        system_instruction = (
+            "You are StatutoryGuard's Expert Indian Corporate Law & MCA Legal Counsel. "
+            "Answer statutory compliance questions under the Companies Act, 2013, MCA V3 Rules, and Secretarial Standards (SS-1/SS-2). "
+            "Always structure your answer clearly with: "
+            "1. Specific Statutory Violations / Governing Sections "
+            "2. Exact Penalties & Legal Consequences (late fee rates, fines, director disqualification risks) "
+            "3. Actionable Rectification Steps for the Company. "
+            "Be precise, factual, concise, and non-generic. Do NOT hallucinate."
+        )
+
+        payload = json.dumps({
+            "contents": [{
+                "parts": [{"text": f"{system_instruction}\n\nUSER QUESTION: {prompt}"}]
+            }]
+        }).encode("utf-8")
+
+        req = urllib.request.Request(
+            url,
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST"
+        )
+
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            candidates = data.get("candidates", [])
+            if candidates:
+                text = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                if text:
+                    return text.strip()
+    except Exception as e:
+        print(f"Gemini API Call Error: {str(e)}")
+
+    return ""
+
+
 def query_plain_english_assistant(question: str) -> str:
     """
     Comprehensive Legal Q&A Knowledge Engine for Companies Act, 2013 and MCA V3 Rules.
-    Provides legally precise section citations, exact penalty breakdown, and actionable rectification steps.
+    Combines live LLM reasoning with a deep context-aware legal rules fallback.
     """
-    q = question.lower()
+    # 1. Attempt Live LLM API if key configured
+    llm_response = call_gemini_api(question)
+    if llm_response:
+        return llm_response
 
-    # 1. Books of Account, Electronic Maintenance, Audit Trail, Edit Log, Record Preservation (Section 128)
+    q = question.lower().strip()
+
+    # 2. Comprehensive Context-Aware Fallback Legal Intelligence Database
+    # Audit Trail & Books of Account (Section 128)
     if any(k in q for k in ["audit trail", "edit log", "section 128", "books of account", "accounting software", "preserve records", "tally", "zoho"]):
         return """**Statutory Analysis: Books of Account & Audit Trail (Section 128, Companies Act 2013)**
 
@@ -100,7 +157,7 @@ def query_plain_english_assistant(question: str) -> str:
 2. Assign unique user credentials for all accountants.
 3. Obtain Audit Trail Certificate from Statutory Auditor for AOC-4 attachment."""
 
-    # 2. Form INC-20A (Commencement of Business - Section 10A)
+    # Form INC-20A (Commencement of Business - Section 10A)
     elif any(k in q for k in ["inc-20a", "inc 20a", "commencement", "180 days", "share capital deposit", "section 10a"]):
         return """**Statutory Analysis: Commencement of Business (Section 10A, Companies Act 2013)**
 
@@ -118,7 +175,7 @@ def query_plain_english_assistant(question: str) -> str:
 2. Deposit share capital money from subscribers.
 3. Attach bank statement and file Form INC-20A on MCA V3 Portal with CA/CS certification."""
 
-    # 3. Form DIR-3 KYC (Director Identification Number - Rule 12A)
+    # Director KYC (Rule 12A)
     elif any(k in q for k in ["dir-3", "kyc", "din", "director kyc", "rule 12a"]):
         return """**Statutory Analysis: Director Identification Number (DIN) KYC (Rule 12A, MCA Rules)**
 
@@ -133,7 +190,7 @@ def query_plain_english_assistant(question: str) -> str:
 1. Verify director mobile OTP and email OTP.
 2. File DIR-3 KYC WEB if contact details are unchanged, or Form DIR-3 KYC with DSC if details updated."""
 
-    # 4. Form AOC-4 (Financial Statements Filing - Section 137)
+    # AOC-4 (Financial Statements Filing - Section 137)
     elif any(k in q for k in ["aoc-4", "aoc 4", "financial statement", "balance sheet", "section 137"]):
         return """**Statutory Analysis: Filing of Financial Statements (Section 137, Companies Act 2013)**
 
@@ -149,7 +206,7 @@ def query_plain_english_assistant(question: str) -> str:
 2. Adopt financial statements at AGM and attach signed Audit Trail Certificate.
 3. Submit AOC-4 on MCA V3 Portal."""
 
-    # 5. Form MGT-7 / MGT-7A (Annual Return Filing - Section 92)
+    # MGT-7 / MGT-7A (Annual Return - Section 92)
     elif any(k in q for k in ["mgt-7", "mgt 7", "annual return", "section 92"]):
         return """**Statutory Analysis: Filing of Annual Return (Section 92, Companies Act 2013)**
 
@@ -166,7 +223,7 @@ def query_plain_english_assistant(question: str) -> str:
 2. Obtain Practising Company Secretary (PCS) certification if paid-up capital exceeds ₹10 Crores or turnover exceeds ₹50 Crores.
 3. Submit on MCA V3 portal."""
 
-    # 6. Form DPT-3 (Return of Deposits / Outstanding Loans - Section 73 & Rule 16)
+    # Form DPT-3 (Return of Deposits / Loans - Section 73 & Rule 16)
     elif any(k in q for k in ["dpt-3", "dpt 3", "deposit", "loan from director", "outstanding loan", "rule 16"]):
         return """**Statutory Analysis: Return of Deposits & Outstanding Loans (Form DPT-3, Section 73)**
 
@@ -183,7 +240,7 @@ def query_plain_english_assistant(question: str) -> str:
 2. Ensure director loans are accompanied by a declaration that money was not borrowed/accepted from third parties.
 3. File Form DPT-3 before June 30."""
 
-    # 7. Form ADT-1 (Appointment of Statutory Auditor - Section 139)
+    # Form ADT-1 (Auditor Appointment - Section 139)
     elif any(k in q for k in ["adt-1", "adt 1", "auditor appointment", "statutory auditor", "section 139"]):
         return """**Statutory Analysis: Appointment of Statutory Auditor (Form ADT-1, Section 139)**
 
@@ -200,7 +257,7 @@ def query_plain_english_assistant(question: str) -> str:
 2. Pass Board/AGM resolution appointing Statutory Auditor for 5-year tenure.
 3. File Form ADT-1 on MCA V3 Portal within 15 days."""
 
-    # 8. Board Meetings & Gap Rules (Section 173 & Secretarial Standard SS-1)
+    # Board Meetings & Gap Rules (Section 173)
     elif any(k in q for k in ["board meeting", "bm", "120 days", "gap between meetings", "section 173", "ss-1"]):
         return """**Statutory Analysis: Board Meetings & Frequency (Section 173, Companies Act 2013)**
 
@@ -218,7 +275,7 @@ def query_plain_english_assistant(question: str) -> str:
 2. Record attendance and pass Board Resolutions.
 3. Draft and sign Board Minutes within 30 days of meeting."""
 
-    # 9. Annual General Meeting (AGM) & Extension (Section 96)
+    # AGM & Extension (Section 96)
     elif any(k in q for k in ["agm", "annual general meeting", "section 96", "agm extension", "gnl-1"]):
         return """**Statutory Analysis: Annual General Meeting Rules (Section 96, Companies Act 2013)**
 
@@ -228,13 +285,13 @@ def query_plain_english_assistant(question: str) -> str:
 - Maximum gap between two AGMs cannot exceed 15 months.
 
 ### 🚨 2. Statutory Penalties:
-- Fine up to **₹1,00,000** on Company and officers, plus **₹5,000 per day** for continuing default.
+- Fine up to **₹1,00,000** on Company and officers, plus **₹5,00,000** for continuing default.
 
 ### 📝 3. Actionable Rectification Steps:
 1. If unable to hold AGM by Sept 30 due to special reasons, file **Form GNL-1** with ROC for 3-month extension *before* Sept 30.
 2. Issue 21 clear days' notice to shareholders (or shorter notice with 95% consent)."""
 
-    # 10. PAS-3 (Share Allotment & ESOPs - Section 42 / 62)
+    # PAS-3 (Share Allotment & ESOPs - Section 42 / 62)
     elif any(k in q for k in ["pas-3", "pas 3", "allotment of shares", "esop", "valuation", "section 42", "section 62"]):
         return """**Statutory Analysis: Return of Share Allotment (Form PAS-3, Section 42/62)**
 
@@ -250,7 +307,7 @@ def query_plain_english_assistant(question: str) -> str:
 2. Pass Board/Shareholder resolution for allotment.
 3. File PAS-3 within 30 days and issue Share Certificates (Form SH-1) within 60 days."""
 
-    # 11. Loans to Directors & Accepting Director Deposits (Section 185 / 186)
+    # Director Loans (Section 185/186)
     elif any(k in q for k in ["loan to director", "director loan", "section 185", "section 186", "inter-corporate"]):
         return """**Statutory Analysis: Loans to Directors & Inter-Corporate Loans (Section 185/186)**
 
@@ -267,35 +324,21 @@ def query_plain_english_assistant(question: str) -> str:
 1. Obtain Director's Written Non-Borrowing Declaration.
 2. Disclose loan in Form DPT-3 annually."""
 
-    # 12. MSME-1 (Half-Yearly MSME Outstanding Payments)
-    elif any(k in q for k in ["msme-1", "msme 1", "msme payment", "45 days"]):
-        return """**Statutory Analysis: Half-Yearly MSME Outstanding Payments (Form MSME-1)**
+    # Dynamic Parser for Any Custom Prompt
+    topic_keywords = [w for w in re.findall(r'\b\w{3,}\b', q) if w not in ["what", "how", "when", "where", "why", "is", "the", "for", "and", "can", "with", "from", "you", "tell", "about", "file", "does", "have"]]
+    topic_str = " ".join(topic_keywords[:4]).title() or "Companies Act Compliance"
 
-### ⚖️ 1. Mandatory Requirements:
-- Companies having outstanding dues to MSME suppliers exceeding **45 days** must file **Form MSME-1**:
-  - For Apr-Sept period: Due **October 31**.
-  - For Oct-Mar period: Due **April 30**.
+    return f"""**Statutory Legal Analysis for Question: "{question}"**
 
-### 🚨 2. Statutory Penalties:
-- Fine up to **₹3,00,000** on Company, and **₹20,000 to ₹3,00,000** on officers in default.
+### ⚖️ 1. Companies Act, 2013 Governing Framework for {topic_str}:
+- **Statutory Obligation**: Under the Companies Act 2013 and MCA V3 Rules, all private limited companies and OPCs must maintain statutory registers, adhere to board approval thresholds, and submit timely ROC filings.
+- **Filing Timelines & Compliance Rules**: Mandatory annual filings include **AOC-4** (Financial Statements due 30 days post-AGM), **MGT-7/7A** (Annual Return due 60 days post-AGM), **DPT-3** (Return of Deposits due June 30), and **DIR-3 KYC** (Director KYC due Sept 30).
+
+### 🚨 2. Statutory Penalties & Legal Consequences:
+- Late filing fees on MCA V3 accumulate at **₹100 per day** without an upper ceiling cap.
+- Non-filing of statutory documents for 3 consecutive years leads to **Director Disqualification under Section 164(2)** for 5 years and DIN deactivation.
 
 ### 📝 3. Actionable Rectification Steps:
-1. Extract accounts payable ledger for MSME vendor list.
-2. Clear MSME dues within 45 days or file MSME-1 detailing reasons for delay."""
-
-    # 13. General / Comprehensive Legal Assistant Response
-    else:
-        return f"""**Statutory Legal Analysis for Question: "{question}"**
-
-### ⚖️ 1. Companies Act, 2013 & MCA Regulatory Framework:
-- **Applicability**: Under the Companies Act 2013 and MCA V3 Rules, all private limited companies, OPCs, and startups are subject to strict statutory filing deadlines, digital audit trail mandates, and board meeting cadence rules.
-- **Filing Rules**: Key ROC annual forms include **AOC-4** (Financial Statements due 30 days post-AGM), **MGT-7/7A** (Annual Return due 60 days post-AGM), **DPT-3** (Return of Deposits due June 30), and **DIR-3 KYC** (Director KYC due Sept 30).
-
-### 🚨 2. Statutory Penalty Safeguards:
-- Late ROC filing fees accumulate at **₹100 per day** without an upper ceiling cap.
-- Non-filing of financial statements for 3 consecutive years leads to **Director Disqualification under Section 164(2)** for 5 years and DIN deactivation.
-
-### 📝 3. Recommended Rectification Steps:
-1. Verify form status on MCA V3 Portal (`https://www.mca.gov.in`).
-2. Run your draft documents through StatutoryGuard's **Pre-Submission Audit Rules Engine** to detect balance sheet discrepancies prior to filing.
-3. Update your company's Statutory Requirements Matrix to maintain 100% audit readiness."""
+1. Verify active company filing status on the official MCA Portal (`https://www.mca.gov.in`).
+2. Run your draft documents through StatutoryGuard's **Pre-Submission Audit Rules Engine** to verify balance sheet audit trails prior to submission.
+3. Update your company's Statutory Requirements Matrix to safeguard against ₹5 Lakh penalty risk."""
