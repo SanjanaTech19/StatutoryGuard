@@ -1,102 +1,94 @@
 import React, { useState } from 'react';
-import { Shield, User, Building2, Lock, ArrowRight, AlertTriangle, CheckCircle2, Sparkles } from 'lucide-react';
+import { Shield, Lock, X, CheckCircle2, AlertTriangle, ArrowRight, Sparkles, Building2 } from 'lucide-react';
 
-export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
-  const [tab, setTab] = useState('login');
-  
-  // Login State
-  const [loginInput, setLoginInput] = useState('rajesh_founder');
-  const [loginPass, setLoginPass] = useState('FounderPass123!');
+export default function AuthModal({ isOpen, onClose, onLogin, onSignup }) {
+  const [tab, setTab] = useState('login'); // 'login' | 'signup'
+
+  // Login form state
+  const [loginInput, setLoginInput] = useState('');
+  const [loginPass, setLoginPass] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loginSuccess, setLoginSuccess] = useState('');
 
-  // Admin Login State
-  const [adminUser, setAdminUser] = useState('admin');
-  const [adminPass, setAdminPass] = useState('AdminStrictSecret123!');
-  const [adminPin, setAdminPin] = useState('998877');
-  const [adminError, setAdminError] = useState('');
-
-  // Generate unique initial values for new startup signup
-  const randomNum = Math.floor(100000 + Math.random() * 900000);
-  const [cin, setCin] = useState(`U72900MH2024PTC${randomNum}`);
-  const [compName, setCompName] = useState(`AuraTech_${randomNum} Private Limited`);
+  // Signup form state
+  const [cin, setCin] = useState('U72900KA2024PTC184512');
+  const [compName, setCompName] = useState('AuraTech Innovations Private Limited');
   const [entityType, setEntityType] = useState('Private Limited');
   const [incDate, setIncDate] = useState('2024-02-15');
-  const [fullName, setFullName] = useState('Vikram Sethi');
-  const [username, setUsername] = useState(`founder_${randomNum}`);
-  const [email, setEmail] = useState(`founder_${randomNum}@auratech.in`);
-  const [pass1, setPass1] = useState('FounderPass123!');
+  const [fullName, setFullName] = useState('Sanjana S');
+  const [username, setUsername] = useState('sanjana');
+  const [email, setEmail] = useState('founder@auratech.in');
+  const [pass1, setPass1] = useState('FounderSecret123!');
   const [signupError, setSignupError] = useState('');
   const [isSigningUp, setIsSigningUp] = useState(false);
+
+  if (!isOpen) return null;
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setLoginError('');
-    try {
-      await onLogin(loginInput, loginPass);
-    } catch (err) {
-      setLoginError(err.message || 'Login failed. Please check your credentials.');
-    }
-  };
+    setLoginSuccess('');
 
-  const handleAdminLoginSubmit = async (e) => {
-    e.preventDefault();
-    setAdminError('');
     try {
-      await onAdminLogin(adminUser, adminPass, adminPin);
+      await onLogin(loginInput.trim(), loginPass);
+      setLoginSuccess('Authentication successful! Loading company workspace...');
+      setTimeout(() => {
+        onClose();
+      }, 600);
     } catch (err) {
-      setAdminError(err.message || 'Strict Admin Authentication Failed');
+      setLoginError(err.message || 'Invalid username or password.');
     }
   };
 
   const handleSignupSubmit = async (e) => {
     e.preventDefault();
     setSignupError('');
-    setLoginSuccess('');
+
+    if (!cin.trim() || !compName.trim() || !username.trim() || !pass1.trim()) {
+      setSignupError('Please fill in all mandatory fields.');
+      return;
+    }
+
     setIsSigningUp(true);
-
     try {
-      if (!cin || !compName || !username || !email || !pass1) {
-        setSignupError('Please fill in all required fields.');
-        setIsSigningUp(false);
-        return;
-      }
-
       await onSignup({
-        cin,
-        company_name: compName,
+        cin: cin.trim(),
+        company_name: compName.trim(),
         entity_type: entityType,
         incorporation_date: incDate,
-        full_name: fullName,
-        username,
-        email,
+        full_name: fullName.trim(),
+        username: username.trim(),
+        email: email.trim(),
         password: pass1
       });
+      onClose();
     } catch (err) {
-      setSignupError(err.message || 'Sign up failed. Username or CIN may already be registered.');
+      setSignupError(err.message || 'Registration failed. Check CIN or credentials.');
     } finally {
       setIsSigningUp(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-slate-950 relative overflow-hidden">
-      {/* Ambient background glows */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-6">
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-100 transition p-1 rounded-lg hover:bg-slate-800"
+        >
+          <X className="h-5 w-5" />
+        </button>
 
-      <div className="max-w-md w-full glass-card rounded-3xl p-8 space-y-6 relative z-10 border border-slate-800">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <div className="h-14 w-14 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-xl shadow-sky-500/20 mx-auto">
-            <Shield className="h-8 w-8 text-white" />
+        {/* Modal Header */}
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg shadow-sky-500/20">
+            <Shield className="h-5 w-5" />
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-gradient">
-            StatutoryGuard
-          </h1>
-          <p className="text-xs text-slate-400 font-medium">
-            AI-Driven MCA/ROC Compliance Armour for Indian Startups
-          </p>
+          <div>
+            <h3 className="text-base font-bold text-slate-100">StatutoryGuard Auth Security</h3>
+            <p className="text-xs text-slate-400">Companies Act, 2013 Automated Compliance Matrix</p>
+          </div>
         </div>
 
         {/* Tab Selector */}
@@ -117,16 +109,7 @@ export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
               tab === 'signup' ? 'bg-sky-500 text-white shadow font-bold' : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            Sign-Up
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('admin')}
-            className={`flex-1 py-2 rounded-lg transition ${
-              tab === 'admin' ? 'bg-purple-600 text-white shadow font-bold' : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Admin Auth
+            Sign-Up & Register
           </button>
         </div>
 
@@ -291,64 +274,6 @@ export default function AuthModal({ onLogin, onAdminLogin, onSignup }) {
             >
               <Sparkles className="h-4 w-4" />
               <span>{isSigningUp ? 'Registering Startup...' : 'Register Startup & Auto Sign-In'}</span>
-            </button>
-          </form>
-        )}
-
-        {/* 3. Strict Admin Login */}
-        {tab === 'admin' && (
-          <form onSubmit={handleAdminLoginSubmit} className="space-y-4">
-            <div className="p-3 bg-purple-500/10 border border-purple-500/30 text-purple-300 rounded-xl text-xs flex items-center gap-2">
-              <Lock className="h-4 w-4 shrink-0" />
-              <span>Strict 2FA Administrative Security Portal</span>
-            </div>
-
-            {adminError && (
-              <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 rounded-xl text-xs font-semibold flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 shrink-0" />
-                <span>{adminError}</span>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Admin Username</label>
-              <input
-                type="text"
-                required
-                value={adminUser}
-                onChange={(e) => setAdminUser(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-purple-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Admin Password</label>
-              <input
-                type="password"
-                required
-                value={adminPass}
-                onChange={(e) => setAdminPass(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-purple-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">2FA Security PIN</label>
-              <input
-                type="password"
-                required
-                value={adminPin}
-                onChange={(e) => setAdminPin(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-purple-500"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-purple-500/20 transition flex items-center justify-center gap-2"
-            >
-              <span>Authenticate as System Admin</span>
-              <Lock className="h-4 w-4" />
             </button>
           </form>
         )}
