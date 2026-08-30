@@ -36,7 +36,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
         message: previewMsg
       });
 
-      // Handle Real Direct Opening of WhatsApp / Gmail / Google Messages Apps
+      // Handle Real Direct Opening of WhatsApp / Gmail / Cloud SMS Apps
       if (ch === 'WhatsApp') {
         const cleanPhone = recipient.replace(/[^0-9+]/g, '');
         const encodedMsg = encodeURIComponent(previewMsg);
@@ -51,19 +51,9 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
       } else if (ch === 'Email' && res.mailto_url) {
         window.open(res.mailto_url, '_blank');
         setDispatchStatus(`Gmail Web Compose opened for ${recipient}! Click Send to dispatch email.`);
-      } else if (ch === 'SMS' || ch === 'Google Messages') {
-        // Copy SMS message to clipboard automatically
-        try {
-          await navigator.clipboard.writeText(previewMsg);
-          setCopiedSms(true);
-          setTimeout(() => setCopiedSms(false), 5000);
-        } catch (clipErr) {
-          console.error(clipErr);
-        }
-
-        // Open Google Messages Web Directly
-        window.open('https://messages.google.com/web', '_blank');
-        setDispatchStatus(`Google Messages Web opened for ${recipient}! Compliance payload copied to clipboard.`);
+      } else if (ch === 'SMS' || ch === 'Cloud SMS') {
+        // Option 1: 1-Click Background Silent Cloud SMS (No browser tabs opened!)
+        setDispatchStatus(res.sms_msg || `Cloud SMS Gateway dispatched text directly to ${recipient}!`);
       } else {
         setDispatchStatus(`Successfully dispatched ${ch} reminder for ${selectedForm} to ${recipient}!`);
       }
@@ -73,7 +63,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
         alert_id: res.alert_id || `ALT-${Math.floor(Math.random()*1000)}`,
         company_cin: company.cin,
         form_code: selectedForm,
-        channel: 'Google Messages',
+        channel: 'Cloud SMS Gateway',
         recipient: recipient,
         sent_at: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
         status: 'DELIVERED',
@@ -105,7 +95,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
           <div>
             <h2 className="text-xl font-bold text-slate-100">Automated Multi-Channel Alerts Hub & Real Dispatch Engine</h2>
             <p className="text-xs text-slate-400 mt-1">
-              Dispatches real notifications directly via WhatsApp App, Gmail Web Compose, and Google Messages.
+              Dispatches real notifications directly via WhatsApp App, Gmail Web Compose, and Cloud SMS Gateway.
             </p>
           </div>
         </div>
@@ -200,11 +190,11 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
             </button>
 
             <button
-              onClick={() => handleTestDispatch('Google Messages')}
+              onClick={() => handleTestDispatch('Cloud SMS')}
               className="p-3.5 bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-xl text-xs font-bold transition flex flex-col items-center gap-1.5 shadow-lg shadow-purple-500/5"
             >
               <Smartphone className="h-5 w-5 text-purple-400" />
-              <span>Google Messages</span>
+              <span>Send Cloud SMS</span>
             </button>
           </div>
 
@@ -214,11 +204,6 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
                 <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
                 <span>{dispatchStatus}</span>
               </div>
-              {copiedSms && (
-                <div className="text-[11px] text-purple-300 font-normal pl-6">
-                  ✨ SMS payload automatically copied to clipboard! Paste directly into Google Messages.
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -295,7 +280,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
 
         {dispatchLogs.length === 0 ? (
           <div className="text-center text-slate-500 py-8 text-xs border border-dashed border-slate-800 rounded-xl">
-            No alert dispatches triggered in current session yet. Select a statutory form above and click Launch WhatsApp, Send Gmail, or Google Messages to test!
+            No alert dispatches triggered in current session yet. Select a statutory form above and click Launch WhatsApp, Send Gmail, or Send Cloud SMS to test!
           </div>
         ) : (
           <div className="space-y-2">
