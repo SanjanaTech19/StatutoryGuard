@@ -20,7 +20,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
     }
   }, [selectedForm, currentTask]);
 
-  const handleTestDispatch = async (ch) => {
+  const handleTestDispatch = async (ch, useWeb = false) => {
     try {
       const recipient = ch === 'Email' ? customEmail.trim() : customPhone.trim();
       if (!recipient) {
@@ -37,14 +37,22 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
       });
 
       // Handle Real Direct Opening of WhatsApp / Gmail / SMS Apps
-      if (ch === 'WhatsApp' && res.whatsapp_url) {
-        window.open(res.whatsapp_url, '_blank');
-        setDispatchStatus(`WhatsApp Web / App opened for ${recipient}! Message logged to audit trail.`);
+      if (ch === 'WhatsApp') {
+        const cleanPhone = recipient.replace(/[^0-9+]/g, '');
+        const encodedMsg = encodeURIComponent(previewMsg);
+        
+        if (useWeb) {
+          window.open(`https://web.whatsapp.com/send?phone=${cleanPhone}&text=${encodedMsg}`, '_blank');
+          setDispatchStatus(`WhatsApp Web opened for ${recipient}! Message logged to audit trail.`);
+        } else {
+          // Native WhatsApp Desktop / Mobile App Protocol (Opens WhatsApp app directly without new browser tabs!)
+          window.location.href = `whatsapp://send?phone=${cleanPhone}&text=${encodedMsg}`;
+          setDispatchStatus(`Launched WhatsApp Desktop/Mobile App directly for ${recipient}!`);
+        }
       } else if (ch === 'Email' && res.mailto_url) {
         window.open(res.mailto_url, '_blank');
         setDispatchStatus(`Gmail Web Compose opened for ${recipient}! Click Send to dispatch email.`);
       } else if (ch === 'SMS') {
-        // Copy SMS message to clipboard automatically
         try {
           await navigator.clipboard.writeText(previewMsg);
           setCopiedSms(true);
@@ -106,7 +114,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
           <div>
             <h2 className="text-xl font-bold text-slate-100">Automated Multi-Channel Alerts Hub & Real Dispatch Engine</h2>
             <p className="text-xs text-slate-400 mt-1">
-              Dispatches real notifications directly via WhatsApp Web, Gmail Web Compose / SMTP, and SMS Web.
+              Dispatches real notifications directly via WhatsApp App / Web, Gmail Web Compose, and SMS.
             </p>
           </div>
         </div>
@@ -185,11 +193,11 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
           {/* Channel Dispatch Buttons */}
           <div className="grid grid-cols-3 gap-3 pt-1">
             <button
-              onClick={() => handleTestDispatch('WhatsApp')}
+              onClick={() => handleTestDispatch('WhatsApp', false)}
               className="p-3.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition flex flex-col items-center gap-1.5 shadow-lg shadow-emerald-500/5"
             >
               <MessageSquare className="h-5 w-5 text-emerald-400" />
-              <span>Launch WhatsApp</span>
+              <span>Launch WhatsApp App</span>
             </button>
 
             <button
@@ -296,7 +304,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
 
         {dispatchLogs.length === 0 ? (
           <div className="text-center text-slate-500 py-8 text-xs border border-dashed border-slate-800 rounded-xl">
-            No alert dispatches triggered in current session yet. Select a statutory form above and click Launch WhatsApp, Send Gmail, or Open SMS to test!
+            No alert dispatches triggered in current session yet. Select a statutory form above and click Launch WhatsApp App, Send Gmail, or Open SMS to test!
           </div>
         ) : (
           <div className="space-y-2">
