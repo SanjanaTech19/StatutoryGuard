@@ -15,7 +15,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
   useEffect(() => {
     if (currentTask) {
       setPreviewMsg(
-        `[STATUTORYGUARD ALERT] Filing for ${currentTask.form_code} (${currentTask.title}) is due on ${currentTask.due_date}. Avoid statutory penalty risk up to ₹${currentTask.max_penalty?.toLocaleString('en-IN')}. Verify compliance: https://statutoryguard.in`
+        `[STATUTORYGUARD COMPLIANCE ALERT]\n\n📌 Form: ${currentTask.form_code} (${currentTask.title})\n📅 Due Date: ${currentTask.due_date}\n⚠️ Penalty Exposure: Up to ₹${currentTask.max_penalty?.toLocaleString('en-IN')}\n\nPlease ensure timely filing to maintain 100% audit readiness and avoid penalty risk.`
       );
     }
   }, [selectedForm, currentTask]);
@@ -53,7 +53,6 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
           console.error(clipErr);
         }
 
-        // On Desktop (Windows/Mac browser), open Google Messages Web directly to prevent OS protocol prompt
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
         if (isMobile) {
@@ -63,7 +62,6 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
           window.location.href = `sms:${cleanPhone}${delimiter}body=${encodeURIComponent(previewMsg)}`;
           setDispatchStatus(`SMS message copied & mobile messaging app launched for ${recipient}!`);
         } else {
-          // Open Google Messages Web in new tab for desktop
           window.open('https://messages.google.com/web', '_blank');
           setDispatchStatus(`SMS message copied to clipboard! Opened Google Messages Web for ${recipient}.`);
         }
@@ -176,10 +174,10 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
           {/* Live Message Payload Preview Box */}
           <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-1.5">
             <div className="flex justify-between items-center text-[11px] font-bold text-slate-400">
-              <span>Message Payload & Action Deep-Link</span>
+              <span>Clean Dispatched Message Payload</span>
               <span className="text-sky-400 font-mono">CIN: {company.cin}</span>
             </div>
-            <p className="text-xs text-slate-200 font-mono leading-relaxed bg-slate-900/80 p-3 rounded-lg border border-slate-800">
+            <p className="text-xs text-slate-200 font-mono leading-relaxed bg-slate-900/80 p-3.5 rounded-lg border border-slate-800 whitespace-pre-line">
               {previewMsg}
             </p>
           </div>
