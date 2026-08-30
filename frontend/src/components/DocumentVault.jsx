@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, Key, Upload, FileText, CheckCircle2, Shield, Building2 } from 'lucide-react';
+import { Lock, Key, Upload, FileText, CheckCircle2, Shield, Building2, Eye, Download, Unlock } from 'lucide-react';
 
 export default function DocumentVault({ cin, data, onUpload }) {
   const { documents, directors } = data || { documents: [], directors: [] };
@@ -170,7 +170,7 @@ export default function DocumentVault({ cin, data, onUpload }) {
               </div>
             ) : (
               filteredDocs.map((doc) => (
-                <div key={doc.doc_id} className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center justify-between gap-3">
+                <div key={doc.doc_id} className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 shrink-0">
                       <FileText className="h-5 w-5" />
@@ -178,15 +178,35 @@ export default function DocumentVault({ cin, data, onUpload }) {
                     <div>
                       <h4 className="text-xs font-bold text-slate-200">{doc.doc_name}</h4>
                       <p className="text-[10px] text-slate-400">Category: {doc.category} &bull; Uploaded: {doc.upload_date}</p>
-                      <p className="text-[10px] text-sky-400 font-mono flex items-center gap-1 mt-0.5">
-                        <Building2 className="h-3 w-3 inline shrink-0" /> CIN: {doc.company_cin}
-                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3" /> AES-256 ENCRYPTED
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  <span className="text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-full flex items-center gap-1 shrink-0">
-                    <CheckCircle2 className="h-3 w-3" /> AES-256 ENCRYPTED
-                  </span>
+                  {/* Decrypt, View & Download Action Buttons */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    <a
+                      href={`/api/vault/download/${doc.doc_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3 py-1.5 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-lg text-xs font-bold transition flex items-center gap-1"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      <span>View</span>
+                    </a>
+
+                    <a
+                      href={`/api/vault/download/${doc.doc_id}`}
+                      download={doc.doc_name}
+                      className="px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs font-bold transition flex items-center gap-1"
+                    >
+                      <Download className="h-3.5 w-3.5" />
+                      <span>Download</span>
+                    </a>
+                  </div>
                 </div>
               ))
             )}
