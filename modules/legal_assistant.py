@@ -77,7 +77,9 @@ def translate_circular_to_plain_english(raw_text: str) -> dict:
         except Exception as e:
             print(f"LLM Circular Translation Error: {str(e)}")
 
-    # 2. Strict Matchers for Known Sample Circulars
+    # 2. Strict Topic Matchers for MCA Legal Circulars & Notices
+
+    # DIR-3 KYC / DIN Circulars
     if "dir-3 kyc" in raw_lower or "dir-3 kyc web" in raw_lower:
         has_extended = "15th october" in raw_lower or "october 2024" in raw_lower
         due_str = "15th October 2024" if has_extended else "30th September"
@@ -95,6 +97,7 @@ def translate_circular_to_plain_english(raw_text: str) -> dict:
             ]
         }
 
+    # Section 128 Audit Trail / Edit Log Circulars
     elif "audit trail" in raw_lower or "edit log" in raw_lower:
         has_penalty_text = "rs. 50,000" in raw_lower or "500,000" in raw_lower
         penalty_str = "Rs 50,000 to Rs 500,000 per officer in default under Section 128(6)" if has_penalty_text else "Not specified in the document"
@@ -110,6 +113,7 @@ def translate_circular_to_plain_english(raw_text: str) -> dict:
             ]
         }
 
+    # INC-20A Commencement of Business Circulars
     elif "inc-20a" in raw_lower or "section 10a" in raw_lower:
         has_penalty_text = "rs 50,000" in raw_lower or "1,000 per day" in raw_lower
         penalty_str = "Company: Rs 50,000; Officers in default: Rs 1,000 per day (max Rs 1,00,000) & ROC Strike-off" if has_penalty_text else "Not specified in the document"
@@ -124,7 +128,73 @@ def translate_circular_to_plain_english(raw_text: str) -> dict:
             ]
         }
 
-    # 3. Clean Rules-Based Engine for Generic Pasted Text
+    # MSME-1 Payment Disclosures Circulars
+    elif "msme" in raw_lower or "msme-1" in raw_lower:
+        has_due = "30th november" in raw_lower or "november 2024" in raw_lower
+        due_str = "30th November 2024" if has_due else "Half-Yearly (April 30 / October 31)"
+        has_penalty = "rs 20,000" in raw_lower or "3,00,000" in raw_lower or "section 405" in raw_lower
+        penalty_str = "Fine up to Rs 3,00,000 under Section 405" if has_penalty else "Not specified in the document"
+
+        return {
+            "summary": "The circular mandates disclosure of outstanding payments due to MSME vendors pending for more than 45 days in Form MSME-1.",
+            "deadline": due_str,
+            "penalty_risk": penalty_str,
+            "actionable_tasks": [
+                {"task": "Extract accounts payable ledger for MSME vendors", "status": "Filed", "action": "Filter pending payments older than 45 days"},
+                {"task": "Calculate total outstanding amount and delay reasons", "status": "Review", "action": "Prepare vendor-wise delay statement"},
+                {"task": "File Form MSME-1 on MCA V3 Portal", "status": "Pending", "action": "Submit half-yearly return before deadline"}
+            ]
+        }
+
+    # DPT-3 Return of Deposits & Loans Circulars
+    elif "dpt-3" in raw_lower or "return of deposits" in raw_lower:
+        has_penalty = "1,00,000" in raw_lower or "10,00,000" in raw_lower or "section 73" in raw_lower
+        penalty_str = "Company: Rs 1,00,000 to Rs 10,00,000 under Section 73" if has_penalty else "Not specified in the document"
+
+        return {
+            "summary": "The circular details mandatory filing of Form DPT-3 disclosing all outstanding loans and deposits as of March 31.",
+            "deadline": "30th June Annually",
+            "penalty_risk": penalty_str,
+            "actionable_tasks": [
+                {"task": "Extract loan balances and director deposits as of March 31", "status": "Filed", "action": "Gather ledger statements"},
+                {"task": "Obtain Auditor Certificate certifying outstanding amounts", "status": "Review", "action": "Request auditor confirmation note"},
+                {"task": "Submit Form DPT-3 on MCA V3 Portal", "status": "Pending", "action": "File return before June 30 deadline"}
+            ]
+        }
+
+    # AOC-4 Financial Statements Circulars
+    elif "aoc-4" in raw_lower or "financial statements" in raw_lower or "balance sheet" in raw_lower:
+        has_penalty = "100 per day" in raw_lower or "section 137" in raw_lower
+        penalty_str = "Late fee of Rs 100 per day of delay under Section 137" if has_penalty else "Not specified in the document"
+
+        return {
+            "summary": "The circular specifies rules for filing audited Balance Sheet and P&L Account in Form AOC-4 within 30 days of AGM.",
+            "deadline": "Within 30 days of AGM",
+            "penalty_risk": penalty_str,
+            "actionable_tasks": [
+                {"task": "Complete annual financial audit with Statutory Auditor", "status": "Filed", "action": "Obtain signed audit report"},
+                {"task": "Adopt financial statements at AGM", "status": "Review", "action": "Record AGM resolution adopting financials"},
+                {"task": "File Form AOC-4 on MCA V3 Portal", "status": "Pending", "action": "Submit filing with signed balance sheet attachments"}
+            ]
+        }
+
+    # MGT-7 Annual Return Circulars
+    elif "mgt-7" in raw_lower or "annual return" in raw_lower:
+        has_penalty = "100 per day" in raw_lower or "section 92" in raw_lower
+        penalty_str = "Late fee of Rs 100 per day of delay under Section 92" if has_penalty else "Not specified in the document"
+
+        return {
+            "summary": "The circular specifies rules for filing Form MGT-7 / MGT-7A Annual Return detailing shareholding and governance within 60 days of AGM.",
+            "deadline": "Within 60 days of AGM",
+            "penalty_risk": penalty_str,
+            "actionable_tasks": [
+                {"task": "Compile updated list of shareholders and directors", "status": "Filed", "action": "Verify MGT-1 register records"},
+                {"task": "Obtain PCS certification if required", "status": "Review", "action": "Engage Practising Company Secretary"},
+                {"task": "File Form MGT-7 on MCA V3 Portal", "status": "Pending", "action": "Submit annual return prior to deadline"}
+            ]
+        }
+
+    # 3. Clean Rules-Based Engine for Custom Pasted Text
     # Filter out header/address/title lines
     header_patterns = [
         r'^ministry of corporate affairs.*', r'^government of india.*', r'^f\.?\s*no\..*',
@@ -160,7 +230,6 @@ def translate_circular_to_plain_english(raw_text: str) -> dict:
 
     # Extract Plain-English Summary (2 clean sentences)
     sentences = [s.strip() for s in re.split(r'[.\n]', body_text) if len(s.strip()) > 30]
-    # Remove header sentences if any slipped through
     sentences = [s for s in sentences if not any(w in s.lower() for w in ["ministry of corporate affairs office", "government of india office"])]
     
     if sentences:
