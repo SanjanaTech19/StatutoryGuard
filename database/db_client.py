@@ -93,9 +93,11 @@ class DatabaseClient:
             dsc_director TEXT,
             dsc_expiry TEXT,
             encrypted INTEGER DEFAULT 1,
+            file_hash TEXT,
             FOREIGN KEY (company_cin) REFERENCES companies(cin)
         );
         """)
+
 
         # Alerts log table
         cursor.execute("""
@@ -352,12 +354,13 @@ class DatabaseClient:
         conn = self._get_connection()
         cursor = conn.cursor()
         cursor.execute("""
-        INSERT INTO document_vault (doc_id, company_cin, doc_name, category, upload_date, file_path, dsc_director, dsc_expiry, encrypted)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO document_vault (doc_id, company_cin, doc_name, category, upload_date, file_path, dsc_director, dsc_expiry, encrypted, file_hash)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(doc_id) DO UPDATE SET
             doc_name=excluded.doc_name,
             category=excluded.category,
-            dsc_expiry=excluded.dsc_expiry;
+            dsc_expiry=excluded.dsc_expiry,
+            file_hash=excluded.file_hash;
         """, (
             doc_dict["doc_id"],
             doc_dict["company_cin"],
@@ -367,11 +370,13 @@ class DatabaseClient:
             doc_dict["file_path"],
             doc_dict.get("dsc_director", ""),
             doc_dict.get("dsc_expiry", ""),
-            1 if doc_dict.get("encrypted", True) else 0
+            1 if doc_dict.get("encrypted", True) else 0,
+            doc_dict.get("file_hash", "")
         ))
         conn.commit()
         conn.close()
         return True
+
 
     def get_vault_docs(self, cin: str) -> List[Dict[str, Any]]:
         conn = self._get_connection()

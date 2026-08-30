@@ -358,9 +358,11 @@ async def upload_vault_document(
         "file_path": rel_file_path,
         "dsc_director": dsc_director,
         "dsc_expiry": dsc_expiry,
-        "encrypted": True
+        "encrypted": True,
+        "file_hash": file_hash
     })
     return {"status": "success", "doc_id": doc_id, "file_hash": file_hash[:12]}
+
 
 @app.get("/api/vault/view/{doc_id}", response_class=HTMLResponse)
 def view_vault_document_html(doc_id: str):
