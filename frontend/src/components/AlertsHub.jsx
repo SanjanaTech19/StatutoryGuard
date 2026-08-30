@@ -83,13 +83,6 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
     return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&dates=${dates}`;
   };
 
-  const getOutlookCalendarUrl = () => {
-    if (!currentTask) return '#';
-    const title = encodeURIComponent(`StatutoryGuard: ${currentTask.form_code} MCA Filing Due`);
-    const details = encodeURIComponent(`Mandatory MCA filing due date for ${currentTask.title}.\nAvoid penalty exposure up to ₹${currentTask.max_penalty?.toLocaleString('en-IN')}.`);
-    return `https://outlook.office.com/calendar/0/deeplink/compose?subject=${title}&body=${details}&startdt=${currentTask.due_date}T09:00:00Z&enddt=${currentTask.due_date}T10:00:00Z`;
-  };
-
   return (
     <div className="space-y-6">
       {/* Banner */}
@@ -101,7 +94,7 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
           <div>
             <h2 className="text-xl font-bold text-slate-100">Automated Multi-Channel Alerts Hub & Cadence Radar</h2>
             <p className="text-xs text-slate-400 mt-1">
-              Dispatches automated pre-deadline reminders across WhatsApp, Gmail, and Google/Outlook Calendars.
+              Dispatches automated pre-deadline reminders across WhatsApp, Gmail, and Google / Apple Calendars.
             </p>
           </div>
         </div>
@@ -212,40 +205,30 @@ export default function AlertsHub({ company, tasks, onDispatchTest }) {
           <div className="glass-panel rounded-2xl p-6 space-y-4">
             <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
               <Calendar className="h-5 w-5 text-indigo-400" />
-              Calendar Sync Radar (Google, Outlook & .ics iCal)
+              Calendar Sync Radar (.ics & Google Calendar)
             </h3>
             <p className="text-xs text-slate-400">
-              Sync form statutory due dates directly to Google Calendar, Outlook Web, or Apple iCal with automated 7-day alarms.
+              Sync form statutory due dates directly to Google Calendar, Outlook, or Apple iCal with automated 7-day alarms.
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <a
                 href={`/api/alerts/calendar.ics?cin=${company.cin}`}
                 download={`${company.name}_mca_deadlines.ics`}
-                className="inline-flex items-center justify-center gap-1.5 py-2.5 px-3 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold text-[11px] rounded-xl shadow-lg shadow-indigo-500/20 transition text-center"
+                className="inline-flex items-center justify-center gap-2 py-3 px-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-indigo-500/20 transition text-center"
               >
-                <Download className="h-3.5 w-3.5" />
-                <span>Download .ics</span>
+                <Download className="h-4 w-4" />
+                <span>Download .ics File</span>
               </a>
 
               <a
                 href={getGoogleCalendarUrl()}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-1.5 py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-500/30 font-bold text-[11px] rounded-xl transition text-center"
+                className="inline-flex items-center justify-center gap-2 py-3 px-4 bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-500/30 font-bold text-xs rounded-xl transition text-center"
               >
-                <ExternalLink className="h-3.5 w-3.5 text-sky-400" />
-                <span>Google Calendar</span>
-              </a>
-
-              <a
-                href={getOutlookCalendarUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-purple-300 border border-purple-500/30 font-bold text-[11px] rounded-xl transition text-center"
-              >
-                <ExternalLink className="h-3.5 w-3.5 text-purple-400" />
-                <span>Outlook Web</span>
+                <ExternalLink className="h-4 w-4 text-sky-400" />
+                <span>Add to Google Calendar</span>
               </a>
             </div>
 
