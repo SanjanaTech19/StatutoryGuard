@@ -1,7 +1,7 @@
 """
 Plain-English AI Legal Assistant Module
 Translates MCA circulars and answers Companies Act 2013 statutory compliance questions with complete, legally precise citations and actionable rectification plans.
-Includes Live Gemini & Groq LLM API integrations + Comprehensive Companies Act 2013 Knowledge Base.
+Includes Dynamic Circular & Notice Decoder Engine powered by LLM + Intelligent NLP Text Parser.
 """
 
 import os
@@ -15,60 +15,111 @@ from config import SAMPLE_MCA_CIRCULARS
 def translate_circular_to_plain_english(raw_text: str) -> dict:
     """
     Translates legalistic MCA circular into structured, plain-English summary & actionable task list.
+    Extracts exact deadlines, penalty exposure, and step-by-step tasks from ANY pasted legal text.
     """
+    if not raw_text or not raw_text.strip():
+        return {
+            "summary": "No circular text provided.",
+            "deadline": "Not Specified",
+            "penalty_risk": "None",
+            "actionable_tasks": []
+        }
+
     raw_lower = raw_text.lower()
     
-    tasks = []
-    summary = ""
-    deadline = "Not Specified"
-    penalty = "Standard Companies Act 2013 penalties"
+    # 1. Attempt Live LLM Circular Translation if Gemini / Groq Key Available
+    api_key = (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or os.getenv("GROQ_API_KEY") or "").strip("'\"")
+    if api_key:
+        try:
+            prompt = (
+                "You are an expert Indian Corporate Law MCA Decoder. "
+                "Analyze the following raw legal MCA circular or notice and return ONLY a valid JSON object with the exact keys: "
+                "\"summary\" (2-sentence founder friendly summary), "
+                "\"deadline\" (exact due date or deadline mentioned in the text, e.g. 15th October 2024), "
+                "\"penalty_risk\" (exact penalty or fine mentioned in the text), and "
+                "\"actionable_tasks\" (array of 3 objects with keys \"task\", \"status\" [Pending/Review/Filed], and \"action\"). "
+                f"\n\nRAW LEGAL CIRCULAR TEXT:\n{raw_text}"
+            )
+            
+            if api_key.startswith("gsk_"):
+                # Groq Call
+                url = "https://api.groq.com/openai/v1/chat/completions"
+                payload = json.dumps({
+                    "model": "llama-3.3-70b-versatile",
+                    "response_format": {"type": "json_object"},
+                    "messages": [{"role": "user", "content": prompt}]
+                }).encode("utf-8")
+                headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+            else:
+                # Gemini Call
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+                payload = json.dumps({
+                    "contents": [{"parts": [{"text": prompt}]}],
+                    "generationConfig": {"response_mime_type": "application/json"}
+                }).encode("utf-8")
+                headers = {"Content-Type": "application/json"}
 
-    if "dir-3 kyc" in raw_lower:
-        summary = "The MCA has mandated annual DIR-3 KYC for all DIN holders. All directors holding an active DIN must complete KYC to avoid DIN deactivation and a ₹5,000 late fee."
-        deadline = "30th September Annually"
-        penalty = "₹5,000 per director + DIN Deactivation"
-        tasks = [
-            {"task": "Verify active DIN list for all company directors", "status": "Filed", "action": "Cross-check DIN status on MCA portal"},
-            {"task": "Collect mobile OTP and email OTP from directors", "status": "Review", "action": "Send OTP request to directors"},
-            {"task": "Submit DIR-3 KYC WEB form before Sept 30", "status": "Pending", "action": "Upload DSC and submit on MCA V3 portal"}
-        ]
-    elif "audit trail" in raw_lower or "edit log" in raw_lower or "section 128" in raw_lower:
-        summary = "MCA mandates under Section 128 that all company accounting software must have an unalterable Edit Log (Audit Trail) enabled throughout the year. Auditors must explicitly report compliance in AOC-4."
-        deadline = "Mandatory for FY 2023-24 & Onwards"
-        penalty = "₹50,000 to ₹500,000 per officer in default"
-        tasks = [
-            {"task": "Verify accounting software (Tally/Zoho/Quickbooks) has Audit Trail enabled", "status": "Review", "action": "Ensure edit log cannot be toggled off"},
-            {"task": "Obtain Audit Trail Certificate from Chartered Accountant", "status": "Pending", "action": "Request auditor confirmation note for AOC-4"}
-        ]
-    elif "inc-20a" in raw_lower or "commencement of business" in raw_lower:
-        summary = "Every newly incorporated company having share capital must file Form INC-20A within 180 days showing share capital deposited into company bank account before starting business or taking loans."
-        deadline = "Within 180 days of incorporation"
-        penalty = "₹50,000 on Company + ₹1,000/day on Directors (Max ₹1 Lakh) + Company Strike Off risk!"
-        tasks = [
-            {"task": "Open corporate bank account and deposit share capital from subscribers", "status": "Filed", "action": "Download bank account statement showing share capital deposit"},
-            {"task": "File Form INC-20A with bank statement attached on MCA V3 portal", "status": "Pending", "action": "Attach DSC of Director and CS/CA certification"}
-        ]
-    elif "mgt-7" in raw_lower or "annual return" in raw_lower:
-        summary = "Form MGT-7 / MGT-7A (Annual Return) must be filed within 60 days from the date of Annual General Meeting (AGM) detailing shareholding pattern, directors, and compliance history."
-        deadline = "Within 60 days of AGM (Nov 29 typical)"
-        penalty = "₹100 per day of continuing delay without upper cap!"
-        tasks = [
-            {"task": "Prepare MGT-7 / MGT-7A with shareholding details", "status": "Pending", "action": "Obtain PCS certification if required"},
-            {"task": "File MGT-7 on MCA V3 Portal", "status": "Pending", "action": "Upload signed form"}
-        ]
-    elif "dpt-3" in raw_lower or "deposit" in raw_lower or "loan" in raw_lower:
-        summary = "Form DPT-3 (Return of Deposits & Outstanding Loans) is mandatory annually by June 30 for all private limited companies disclosing all received money/loans."
-        deadline = "30th June Annually"
-        penalty = "₹1,00,000 to ₹10,00,000 + 18% p.a. interest penalty"
-        tasks = [
-            {"task": "Extract loan ledger & director deposits", "status": "Pending", "action": "Obtain auditor certificate"},
-            {"task": "Submit DPT-3 on MCA V3 Portal", "status": "Pending", "action": "File before June 30 deadline"}
-        ]
+            req = urllib.request.Request(url, data=payload, headers=headers, method="POST")
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                text_out = ""
+                if "choices" in data:
+                    text_out = data["choices"][0]["message"]["content"]
+                elif "candidates" in data:
+                    text_out = data["candidates"][0]["content"]["parts"][0]["text"]
+                
+                if text_out:
+                    parsed_json = json.loads(text_out.strip())
+                    if "summary" in parsed_json:
+                        return parsed_json
+        except Exception as e:
+            print(f"LLM Circular Translation Error: {str(e)}")
+
+    # 2. Intelligent NLP Pattern Parser for Offline / Direct Text Analysis
+    # Extract Deadlines via Regex
+    deadline = "Immediate Compliance Required"
+    date_matches = re.findall(r'\b(?:\d{1,2}(?:st|nd|rd|th)?\s+)?(?:january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s*,?\s*\d{2,4}\b', raw_text, re.IGNORECASE)
+    days_matches = re.findall(r'\b\d+\s+days\b', raw_text, re.IGNORECASE)
+    if date_matches:
+        deadline = date_matches[0].title()
+    elif days_matches:
+        deadline = f"Within {days_matches[0].lower()} of notification"
+
+    # Extract Penalty Figures via Regex
+    penalty = "Standard Companies Act 2013 Penalties (Fine up to ₹5,00,000 / Late Fee ₹100/day)"
+    penalty_matches = re.findall(r'(?:rs\.?|₹)\s?[\d,]+(?:\s*(?:per day|lakh|crore|thousand))?', raw_text, re.IGNORECASE)
+    if penalty_matches:
+        penalty = f"{', '.join(penalty_matches[:2])} for non-compliance"
+    elif "prosecution" in raw_lower or "strike off" in raw_lower:
+        penalty = "ROC Strike-Off Risk & Director Disqualification under Section 164(2)"
+
+    # Extract Key Action Sentences for Summary & Tasks
+    sentences = [s.strip() for s in re.split(r'[.\n]', raw_text) if len(s.strip()) > 20]
+    action_sentences = [s for s in sentences if any(w in s.lower() for w in ["shall", "must", "required", "file", "submit", "mandated", "extended", "compliance"])]
+    
+    if action_sentences:
+        summary = " ".join(action_sentences[:2])
+    elif sentences:
+        summary = " ".join(sentences[:2])
     else:
-        summary = "MCA statutory notification issuing regulatory guidelines and compliance obligations for Indian entities under Companies Act 2013."
+        summary = raw_text[:250] + "..."
+
+    # Build 3 Actionable Step Tasks from text
+    tasks = []
+    if action_sentences:
+        for idx, act in enumerate(action_sentences[:3]):
+            clean_act = re.sub(r'^[0-9\-\*\.\s]+', '', act)
+            tasks.append({
+                "task": f"Step {idx+1}: {clean_act[:70]}...",
+                "status": "Pending" if idx == 0 else "Review",
+                "action": f"Comply with directive: '{clean_act[:90]}'"
+            })
+    
+    if len(tasks) < 2:
         tasks = [
-            {"task": "Review circular requirements with legal counsel / CA", "status": "Review", "action": "Check applicability to startup entity type"},
-            {"task": "File required form or record resolution in board minutes", "status": "Pending", "action": "Update StatutoryGuard compliance matrix"}
+            {"task": "Verify applicability to company entity type & incorporation date", "status": "Filed", "action": "Review circular terms with CA/CS legal counsel"},
+            {"task": "Prepare required e-form documentation & board resolutions", "status": "Review", "action": "Gather supporting attachments and director DSCs"},
+            {"task": "Submit statutory filing on MCA V3 Portal prior to deadline", "status": "Pending", "action": "Upload form and retain SRN filing acknowledgment receipt"}
         ]
 
     return {
@@ -83,12 +134,9 @@ def call_gemini_api(prompt: str) -> str:
     """
     Calls Gemini API if GEMINI_API_KEY or GOOGLE_API_KEY environment variable is present.
     """
-    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    api_key = (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "").strip("'\"")
     if not api_key:
         return ""
-
-    # Clean potential quotation marks
-    api_key = api_key.strip("'\"")
 
     try:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
@@ -419,6 +467,6 @@ def query_plain_english_assistant(question: str) -> str:
 - **Director Disqualification**: Continuous default for 3 consecutive years leads to disqualification under **Section 164(2)** for 5 years and DIN deactivation.
 
 ### 📝 3. Actionable Compliance Steps:
-1. Verify company master data and director DIN status on the official **MCA V3 Portal** (`https://www.mca.gov.in`).
-2. Run your draft documents through StatutoryGuard's **Pre-Submission Audit Rules Engine** to verify audit trail compliance.
+1. Verify company status on the official **MCA V3 Portal** (`https://www.mca.gov.in`).
+2. Run your draft documents through StatutoryGuard's **Pre-Submission Audit Rules Engine** to verify balance sheet audit trails.
 3. Update your company's Statutory Requirements Matrix to eliminate penalty exposure."""
